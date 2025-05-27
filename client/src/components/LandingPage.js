@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { dangerouslySetInnerHTML } from 'react';
 
 const LandingPage = () => {
     const [testimonial, setTestimonial] = useState('');
@@ -8,13 +7,15 @@ const LandingPage = () => {
     // Deliberately vulnerable XSS in testimonials
     const handleTestimonialSubmit = (e) => {
         e.preventDefault();
-        // Intentionally using innerHTML for XSS vulnerability
-        document.getElementById('testimonials').innerHTML += `
-            <div class="testimonial">
-                <p>${testimonial}</p>
-                <small>— Anonymous User</small>
-            </div>
+        // Intentionally using dangerouslySetInnerHTML for XSS vulnerability
+        const testimonialsDiv = document.getElementById('testimonials');
+        const newTestimonial = document.createElement('div');
+        newTestimonial.className = 'testimonial';
+        newTestimonial.innerHTML = `
+            <p>${testimonial}</p>
+            <small>— Anonymous User</small>
         `;
+        testimonialsDiv.appendChild(newTestimonial);
         setTestimonial('');
     };
 
@@ -25,9 +26,8 @@ const LandingPage = () => {
         const reader = new FileReader();
         reader.onload = (event) => {
             // Intentionally exposing file content
-            document.getElementById('filePreview').innerHTML = `
-                <pre>${event.target.result}</pre>
-            `;
+            const filePreview = document.getElementById('filePreview');
+            filePreview.innerHTML = `<pre>${event.target.result}</pre>`;
         };
         reader.readAsText(file);
     };

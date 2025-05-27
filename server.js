@@ -4,6 +4,7 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 

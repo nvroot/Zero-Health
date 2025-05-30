@@ -193,11 +193,16 @@ Respond with JSON in this exact format:
       temperature: 0.1
     });
 
-    const response = completion.choices[0].message.content;
-    return JSON.parse(response);
+    let responseText = completion.choices[0].message.content;
+    
+    // Clean up the response - remove markdown code blocks if present
+    responseText = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    return JSON.parse(responseText);
     
   } catch (error) {
     console.error('Intent classification error:', error);
+    console.error('Raw LLM response:', completion?.choices?.[0]?.message?.content || 'No response');
     // Default to conversation if classification fails
     return { type: 'conversation' };
   }
@@ -243,7 +248,12 @@ Respond with JSON in this exact format:
       temperature: 0.2
     });
 
-    const response = JSON.parse(completion.choices[0].message.content);
+    let responseText = completion.choices[0].message.content;
+    
+    // Clean up the response - remove markdown code blocks if present
+    responseText = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    const response = JSON.parse(responseText);
     
     // Execute the SQL query - deliberately vulnerable to SQL injection
     try {
@@ -274,6 +284,7 @@ Respond with JSON in this exact format:
     
   } catch (error) {
     console.error('Action request error:', error);
+    console.error('Raw LLM response:', completion?.choices?.[0]?.message?.content || 'No response');
     return 'I apologize, but I had trouble understanding your request. Could you please rephrase it?';
   }
 }

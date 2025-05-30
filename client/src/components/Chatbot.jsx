@@ -3,14 +3,7 @@ import './Chatbot.css';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
-      sender: 'bot',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -29,36 +22,95 @@ const Chatbot = () => {
     const loadChatHistory = async () => {
       if (historyLoaded) return;
       
+      console.log('🔄 Starting chat history load process...');
+      
       try {
         const userData = localStorage.getItem('user');
+        console.log('📦 userData from localStorage:', userData);
+        
         const token = userData ? JSON.parse(userData).token : null;
+        console.log('🔑 Token extracted:', token ? 'Present' : 'Missing');
         
-        if (!token) return;
+        if (!token) {
+          console.log('❌ No token found, showing initial greeting');
+          // If no token, show initial greeting
+          setMessages([{
+            id: 1,
+            text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+            sender: 'bot',
+            timestamp: new Date()
+          }]);
+          setHistoryLoaded(true);
+          return;
+        }
         
+        console.log('🌐 Making request to chat history endpoint...');
         const response = await fetch('http://localhost:5000/api/chatbot/history', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
+        console.log('📡 Chat history response status:', response.status);
+        console.log('📡 Chat history response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('📊 Chat history data received:', data);
+          console.log('📊 Number of messages:', data.messages ? data.messages.length : 0);
+          
           if (data.messages && data.messages.length > 0) {
-            // Replace initial greeting with chat history
+            console.log('✅ Loading', data.messages.length, 'chat history messages');
+            // Show chat history with welcome back message
+            // Convert string timestamps to Date objects
+            const messagesWithDateObjects = data.messages.map(msg => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }));
+            
             setMessages([
               {
-                id: 'greeting',
+                id: 'welcome-back',
                 text: "Welcome back! Here's your conversation history:",
                 sender: 'bot',
                 timestamp: new Date()
               },
-              ...data.messages
+              ...messagesWithDateObjects
             ]);
+            console.log('✅ Chat history messages set successfully');
+          } else {
+            console.log('📭 No chat history found, showing initial greeting');
+            // No chat history, show initial greeting
+            setMessages([{
+              id: 'initial-greeting',
+              text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+              sender: 'bot',
+              timestamp: new Date()
+            }]);
           }
+        } else {
+          console.log('❌ Error response from chat history API:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.log('❌ Error response body:', errorText);
+          // Error loading history, show initial greeting
+          setMessages([{
+            id: 'error-greeting',
+            text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+            sender: 'bot',
+            timestamp: new Date()
+          }]);
         }
       } catch (error) {
-        console.error('Failed to load chat history:', error);
+        console.error('💥 Failed to load chat history:', error);
+        // Error loading history, show initial greeting
+        setMessages([{
+          id: 'fallback-greeting',
+          text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+          sender: 'bot',
+          timestamp: new Date()
+        }]);
       } finally {
+        console.log('🏁 Chat history loading process completed');
         setHistoryLoaded(true);
       }
     };
@@ -154,6 +206,13 @@ const Chatbot = () => {
             <div className="chat-status">
               <span className="status-indicator"></span>
               Online
+              <button 
+                onClick={() => { setHistoryLoaded(false); setMessages([]); }} 
+                style={{marginLeft: '10px', padding: '2px 6px', fontSize: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer'}}
+                title="Debug: Reload History"
+              >
+                🔄
+              </button>
             </div>
           </div>
 

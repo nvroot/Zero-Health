@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logo from '../assets/zero-health-logo.svg';
 
 const PatientPortal = () => {
   const [user, setUser] = useState(null);
@@ -197,7 +198,10 @@ const PatientPortal = () => {
       <div className="dashboard">
         <header className="dashboard-header">
           <div className="header-content">
-            <h1>Zero Health - Patient Portal</h1>
+            <div className="header-logo">
+              <img src={logo} alt="Zero Health Logo" className="header-logo-image" />
+              <h1>Patient Portal</h1>
+            </div>
           </div>
         </header>
         <div className="dashboard-loading">
@@ -223,10 +227,9 @@ const PatientPortal = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>Zero Health - Patient Portal</h1>
-          <div className="user-info">
-            <span>Welcome, {user?.email || 'Patient'}</span>
-            <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
+          <div className="header-logo">
+            <img src={logo} alt="Zero Health Logo" className="header-logo-image" />
+            <h1>Patient Portal</h1>
           </div>
         </div>
       </header>

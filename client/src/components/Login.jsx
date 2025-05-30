@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from '../assets/zero-health-logo.svg';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -35,6 +36,9 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-box">
+        <div className="auth-logo">
+          <img src={logo} alt="Zero Health Logo" className="auth-logo-image" />
+        </div>
         <h2>Welcome Back!</h2>
         <p className="subtitle">Login to access your medical records</p>
 
@@ -102,6 +106,17 @@ const Login = () => {
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           width: 100%;
           max-width: 400px;
+        }
+
+        .auth-logo {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .auth-logo-image {
+          height: 60px;
+          width: auto;
         }
 
         h2 {

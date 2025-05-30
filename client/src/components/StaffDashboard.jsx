@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logo from '../assets/zero-health-logo.svg';
 
 const StaffDashboard = () => {
   const [user, setUser] = useState(null);
@@ -247,7 +248,10 @@ const StaffDashboard = () => {
       <div className="dashboard">
         <header className="dashboard-header">
           <div className="header-content">
-            <h1>Zero Health - Staff Dashboard</h1>
+            <div className="header-logo">
+              <img src={logo} alt="Zero Health Logo" className="header-logo-image" />
+              <h1>Staff Dashboard</h1>
+            </div>
           </div>
         </header>
         <div className="dashboard-loading">
@@ -276,7 +280,10 @@ const StaffDashboard = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>Zero Health - Staff Dashboard</h1>
+          <div className="header-logo">
+            <img src={logo} alt="Zero Health Logo" className="header-logo-image" />
+            <h1>Staff Dashboard</h1>
+          </div>
           <div className="user-info">
             <span>Welcome, {user?.email || 'Staff'} ({user?.role})</span>
             <button onClick={handleLogout} className="btn btn-secondary">Logout</button>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from '../assets/zero-health-logo.svg';
 
 const LandingPage = () => {
   const [email, setEmail] = useState('');
@@ -40,7 +41,9 @@ const LandingPage = () => {
   return (
     <div className="landing-page">
       <nav className="navbar">
-        <div className="logo">Zero Health</div>
+        <div className="logo">
+          <img src={logo} alt="Zero Health Logo" className="logo-image" />
+        </div>
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#testimonials">Testimonials</a>

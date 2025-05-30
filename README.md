@@ -115,10 +115,44 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 docker-compose up --build
 ```
 
-4. Access the application:
+4. **Automatic Sample Data Initialization** 🆕:
+   - Sample data is automatically initialized on first startup
+   - No manual steps required - users, medical records, and chat history are added automatically
+   - Safe to restart containers - existing data is preserved
+
+5. Access the application:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:5000
 - AI Chatbot: Available as floating widget on all pages
+
+### Sample Data Management 🆕
+
+#### Automatic Initialization
+- **First Run**: Sample data is automatically created when containers start
+- **Database Detection**: System checks if data exists and skips if already present
+- **Schema Auto-Setup**: Database tables are created automatically if missing
+- **Idempotent**: Safe to run multiple times without duplicating data
+
+#### Manual Database Reset
+Reset the entire database and get fresh sample data:
+```bash
+# Interactive reset script
+./scripts/reset-database.sh
+
+# This will:
+# - Stop all containers and remove volumes
+# - Remove sample data markers
+# - Rebuild containers from scratch
+# - Automatically reinitialize fresh sample data
+```
+
+#### Sample Data Components
+- **Users**: Patient, doctors with specializations, admin accounts
+- **Medical Records**: Annual physical exam with detailed notes
+- **Prescriptions**: 4 realistic medications with dosages and instructions
+- **Lab Results**: 6 common lab tests with realistic values
+- **Chat History**: Previous AI conversations for testing continuity
+- **Appointments**: Pre-scheduled appointments for testing
 
 ### Test Accounts
 

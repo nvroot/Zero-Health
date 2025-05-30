@@ -177,12 +177,78 @@ const Chatbot = () => {
   };
 
   const formatMessage = (text) => {
-    // Simple formatting for better readability
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/•/g, '•')
-      .replace(/\n/g, '<br />');
+    if (!text) return '';
+    
+    let formatted = text;
+    
+    // Handle code blocks first (```...```)
+    formatted = formatted.replace(/```([\s\S]*?)```/g, '<div class="code-block"><pre><code>$1</code></pre></div>');
+    
+    // Handle inline code (`...`)
+    formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+    
+    // Enhanced markdown formatting
+    formatted = formatted
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>') // Bold + italic
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.+?)\*/g, '<em>$1</em>') // Italic
+      .replace(/~~(.+?)~~/g, '<del>$1</del>') // Strikethrough
+      .replace(/__(.+?)__/g, '<u>$1</u>'); // Underline
+    
+    // Handle medical record formatting (Record 1:, Record 2:, etc.)
+    formatted = formatted.replace(/\*\*Record (\d+):\*\*/g, '<div class="record-header">📋 Medical Record $1</div>');
+    
+    // Handle medication formatting
+    formatted = formatted.replace(/(\d+\.\s+Medication:?\s*)(.*?)(?=\n|$)/g, '<div class="medication-item"><span class="medication-number">$1</span><span class="medication-name">$2</span></div>');
+    
+    // Handle dosage, frequency, status info
+    formatted = formatted.replace(/(-\s*)(Dosage|Frequency|Status|Duration|Instructions):\s*(.*?)(?=\n|$)/gm, 
+      '<div class="medication-detail"><span class="detail-label">$2:</span> <span class="detail-value">$3</span></div>');
+    
+    // Handle general field formatting (- field: value)
+    formatted = formatted.replace(/^-\s*([^:]+):\s*(.*)$/gm, 
+      '<div class="field-item"><span class="field-label">$1:</span> <span class="field-value">$2</span></div>');
+    
+    // Handle numbered lists
+    formatted = formatted.replace(/^(\d+)\.\s*(.*)$/gm, '<div class="numbered-item"><span class="number-badge">$1</span><span class="item-content">$2</span></div>');
+    
+    // Handle bullet points with various bullet styles
+    formatted = formatted.replace(/^[•▪▫‣⁃]\s*(.*)$/gm, '<div class="bullet-item"><span class="bullet">•</span><span class="bullet-content">$1</span></div>');
+    
+    // Handle section headers (text with colons at start of line)
+    formatted = formatted.replace(/^([A-Z][A-Z\s]{2,}):$/gm, '<div class="section-header">$1</div>');
+    
+    // Handle service categories and titles
+    formatted = formatted.replace(/^(\d+)\.\s*\*\*([^*]+)\*\*:?\s*(.*)$/gm, 
+      '<div class="service-item"><span class="service-number">$1</span><span class="service-title">$2</span><span class="service-description">$3</span></div>');
+    
+    // Handle Q&A formatting
+    formatted = formatted.replace(/^Q:\s*(.*)$/gm, '<div class="question"><span class="q-label">Q:</span> $1</div>');
+    formatted = formatted.replace(/^A:\s*(.*)$/gm, '<div class="answer"><span class="a-label">A:</span> $1</div>');
+    
+    // Handle error formatting
+    formatted = formatted.replace(/(\*\*SQL Error:\*\*\s*)(.*?)(\n|$)/g, 
+      '<div class="error-message"><span class="error-label">SQL Error:</span> <code class="error-code">$2</code></div>');
+    formatted = formatted.replace(/(\*\*Query:\*\*\s*)(.*?)(\n|$)/g, 
+      '<div class="query-display"><span class="query-label">Query:</span> <code class="sql-query">$2</code></div>');
+    
+    // Handle success messages with checkmarks
+    formatted = formatted.replace(/(✅\s*.*?)(\n|$)/g, '<div class="success-message">$1</div>');
+    
+    // Handle warning/info messages
+    formatted = formatted.replace(/(⚠️\s*.*?)(\n|$)/g, '<div class="warning-message">$1</div>');
+    formatted = formatted.replace(/(ℹ️\s*.*?)(\n|$)/g, '<div class="info-message">$1</div>');
+    
+    // Handle results section
+    formatted = formatted.replace(/(\*\*Results:\*\*)/g, '<div class="results-header"><span class="results-icon">📊</span>Results</div>');
+    
+    // Convert line breaks
+    formatted = formatted.replace(/\n/g, '<br />');
+    
+    // Clean up multiple consecutive <br> tags
+    formatted = formatted.replace(/(<br\s*\/?>){3,}/g, '<br /><br />');
+    
+    return formatted;
   };
 
   return (

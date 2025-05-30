@@ -613,8 +613,42 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'vulnerable' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('Warning: This is a deliberately vulnerable application for educational purposes');
+// ===== AUTOMATIC SAMPLE DATA INITIALIZATION =====
+async function initializeSampleDataOnStartup() {
+    try {
+        console.log('🔍 Checking if sample data initialization is needed...');
+        
+        // Import the initialization function
+        const { initializeSampleData } = require('./scripts/init-sample-data');
+        
+        // Run initialization (it's idempotent - safe to run multiple times)
+        await initializeSampleData();
+        
+    } catch (error) {
+        console.log('⚠️ Sample data initialization failed, but continuing server startup:', error.message);
+    }
+}
+
+// Wait for database and initialize sample data before starting server
+const startServer = async () => {
+    // Wait a bit for database to be ready
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Initialize sample data
+    await initializeSampleDataOnStartup();
+    
+    // Start the server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`🌐 Server running on port ${PORT}`);
+        console.log('⚠️ Warning: This is a deliberately vulnerable application for educational purposes');
+        console.log('📧 Patient login: patient@test.com / password123');
+        console.log('👩‍⚕️ Doctor login: doctor@test.com / password123');
+    });
+};
+
+// Start the server with initialization
+startServer().catch(error => {
+    console.error('💥 Failed to start server:', error);
+    process.exit(1);
 }); 

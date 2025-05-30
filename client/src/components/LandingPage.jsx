@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import logo from '../assets/zero-health-logo.svg';
+import logo from '../assets/logo-light-bg.svg';
 
 const LandingPage = () => {
   const [email, setEmail] = useState('');
@@ -245,7 +245,6 @@ const LandingPage = () => {
         .logo {
           font-size: 1.5rem;
           font-weight: 700;
-          color: #2563eb;
         }
 
         .nav-links {

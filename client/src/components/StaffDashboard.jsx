@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logo from '../assets/zero-health-logo.svg';
+import logo from '../assets/zero-health-logo-dark.svg';
 import Chatbot from './Chatbot';
 
 const StaffDashboard = () => {
@@ -287,7 +287,10 @@ const StaffDashboard = () => {
           </div>
           <div className="user-info">
             <span>Welcome, {user?.email || 'Staff'} ({user?.role})</span>
-            <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
+            <button onClick={handleLogout} className="logout-btn">
+              <span className="logout-icon">🚪</span>
+              Logout
+            </button>
           </div>
         </div>
       </header>

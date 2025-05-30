@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logo from '../assets/zero-health-logo.svg';
+import logo from '../assets/zero-health-logo-dark.svg';
 import Chatbot from './Chatbot';
 
 const PatientPortal = () => {
@@ -231,6 +231,13 @@ const PatientPortal = () => {
           <div className="header-logo">
             <img src={logo} alt="Zero Health Logo" className="header-logo-image" />
             <h1>Patient Portal</h1>
+          </div>
+          <div className="user-info">
+            <span>Welcome, {user?.first_name || user?.email || 'Patient'}</span>
+            <button onClick={handleLogout} className="logout-btn">
+              <span className="logout-icon">🚪</span>
+              Logout
+            </button>
           </div>
         </div>
       </header>

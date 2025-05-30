@@ -1,31 +1,42 @@
-# Zero Health - Deliberately Vulnerable Healthcare Portal
+# Zero Health - Deliberately Vulnerable Healthcare Portal with AI Assistant
 
 ⚠️ **WARNING: This is a deliberately vulnerable application for educational purposes only. Do not use in production or with real data.**
 
 ## Purpose
 
-Zero Health is a deliberately vulnerable healthcare portal designed to demonstrate common security vulnerabilities in web applications. It serves as an educational tool to help developers understand:
+Zero Health is a deliberately vulnerable healthcare portal designed to demonstrate common security vulnerabilities in web applications, now enhanced with an AI-powered chatbot system. It serves as an educational tool to help developers understand:
 
 - Common web security vulnerabilities
 - How these vulnerabilities can be exploited
+- AI/LLM integration security risks and prompt injection vulnerabilities
 - Best practices for preventing such vulnerabilities
 - The importance of secure coding practices
 
 ## Application Features
 
+### 🤖 AI-Powered Chatbot (NEW)
+- **LLM Integration**: Powered by OpenAI GPT-4o-mini for intelligent responses
+- **Two-Step Architecture**: Intent classification → Action execution
+- **Database Operations**: Real-time SQL query generation and execution by AI
+- **Conversation Memory**: Persistent chat history across sessions
+- **Knowledge Base**: Comprehensive medical information and Zero Health services
+- **Deliberate Vulnerabilities**: SQL injection, prompt injection, and information disclosure
+
 ### Patient Portal
-- 📅 **Appointment Booking**: Patients can book appointments with doctors
+- 📅 **Appointment Booking**: Patients can book appointments with doctors (AI-assisted)
 - 🧪 **Lab Results**: View test results and medical reports (with XSS vulnerabilities)
-- 💊 **Prescriptions**: View prescribed medications and instructions
+- 💊 **Prescriptions**: View prescribed medications and instructions (AI-retrievable)
 - 💬 **Messaging**: Send messages to healthcare providers (vulnerable to XSS)
+- 🤖 **AI Assistant**: Chat with AI for health questions and portal assistance
 
 ### Staff Dashboard
 - 👨‍⚕️ **Doctor Features**:
   - View patient list and information
-  - Manage appointments
+  - Manage appointments (AI-accessible)
   - Create and view lab results
   - Write prescriptions
   - Respond to patient messages
+  - AI-powered patient data retrieval
 
 - 💊 **Pharmacist Features**:
   - View all prescriptions
@@ -33,12 +44,32 @@ Zero Health is a deliberately vulnerable healthcare portal designed to demonstra
   - Send messages to patients
 
 ### Role-Based Access
-- Automatic dashboard routing based on user role (patient, doctor, pharmacist)
+- Automatic dashboard routing based on user role (patient, doctor, pharmacist, admin)
 - Different functionality available to each role
 - Deliberately weak access controls for educational purposes
+- AI respects (weak) role-based permissions
+
+## 🔧 Technical Architecture
+
+### Database Schema
+- **Single Users Table**: All user types with role-based differentiation
+- **Comprehensive Medical Records**: Appointments, prescriptions, lab results, messages
+- **Chat History**: Persistent conversation storage for AI context
+- **Deliberate Vulnerabilities**: Weak constraints, exposed schemas, SQL injection points
+
+### AI System Architecture
+```
+User Message → Intent Classifier (LLM) → Action Handler (LLM) → SQL Execution → Response
+```
+
+- **Intent Classification**: Distinguishes between conversation and action requests
+- **Schema-Aware**: AI has full database schema knowledge from init.sql
+- **Conservative Classification**: Only executes actions on explicit user requests
+- **Educational Vulnerabilities**: Maintains SQL injection and prompt injection risks
 
 ## Security Vulnerabilities (Deliberately Vulnerable)
 
+### Traditional Web Vulnerabilities
 - 🔓 Weak authentication and authorization
 - 🕵️‍♂️ Insecure direct object references
 - ⚠️ Cross-site scripting (XSS) vulnerabilities
@@ -50,12 +81,21 @@ Zero Health is a deliberately vulnerable healthcare portal designed to demonstra
 - 🔐 Weak encryption
 - 📝 Insecure deserialization
 
+### AI/LLM Specific Vulnerabilities (NEW)
+- 🤖 **Prompt Injection**: AI can be manipulated through crafted prompts
+- 🗄️ **SQL Injection via AI**: LLM generates vulnerable SQL queries
+- 📊 **Information Disclosure**: AI exposes database schema and internal information
+- 🔍 **Weak Access Controls**: AI bypasses intended data restrictions
+- 💬 **Conversation Manipulation**: Chat history can be exploited for context injection
+- 🎯 **Intent Classification Bypass**: Potential to trick action/conversation classification
+
 ## Getting Started
 
 ### Prerequisites
 
 - Docker and Docker Compose (recommended)
-- OR Node.js (v14 or higher) and PostgreSQL
+- OR Node.js (v16 or higher) and PostgreSQL
+- **OpenAI API Key** (required for chatbot functionality)
 
 ### Quick Start with Docker
 
@@ -65,47 +105,34 @@ git clone https://github.com/yourusername/zero-health.git
 cd zero-health
 ```
 
-2. Start the application:
+2. Set up environment variables:
+```bash
+export OPENAI_API_KEY="your-openai-api-key-here"
+```
+
+3. Start the application:
 ```bash
 docker-compose up --build
 ```
 
-3. Access the application:
+4. Access the application:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:5000
+- AI Chatbot: Available as floating widget on all pages
 
 ### Test Accounts
 
 The application comes with pre-configured test accounts:
 
-- **Doctor**: `doctor@test.com` / `test123`
-- **Pharmacist**: `pharmacist@test.com` / `test123`
-- **Patients**: `patient1@test.com`, `patient2@test.com`, `patient3@test.com` / `test123`
+- **Admin**: `admin@zerohealth.com` / `admin123`
+- **Doctor**: `doctor@test.com` / `password123`
+- **Patient**: `patient@test.com` / `password123`
 
-### Manual Installation
-
-1. Install server dependencies:
-```bash
-npm install
-```
-
-2. Install client dependencies:
-```bash
-cd client
-npm install
-```
-
-3. Set up the database:
-```bash
-# Create a PostgreSQL database named 'zero_health'
-# Default credentials are intentionally weak for demonstration
-```
-
-4. Start the development servers:
-```bash
-# In the root directory
-npm run dev:full
-```
+Additional doctors with specializations:
+- **Cardiologist**: `dr.smith@zerohealth.com` / `doctor123`
+- **Orthopedist**: `dr.brown@zerohealth.com` / `doctor123`
+- **Pediatrician**: `dr.davis@zerohealth.com` / `doctor123`
+- **Dermatologist**: `dr.wilson@zerohealth.com` / `doctor123`
 
 ## API Endpoints
 
@@ -113,6 +140,12 @@ npm run dev:full
 - `POST /api/register` - User registration
 - `POST /api/login` - User login
 - `GET /api/logout` - User logout
+
+### AI Chatbot (NEW)
+- `POST /api/chatbot/chat` - Main chat endpoint with two-step LLM processing
+- `GET /api/chatbot/history` - Retrieve chat history for conversation continuity
+- `POST /api/chatbot/enhanced-chat` - Enhanced chat with prompt injection vectors
+- `GET /api/chatbot/admin/llm-status` - LLM system information (admin only)
 
 ### Patient Portal
 - `GET /api/appointments` - Get user appointments
@@ -133,10 +166,29 @@ npm run dev:full
 - `GET /api/debug/connection` - Database connection info
 - `GET /api/health` - Application health status
 
+## 🤖 AI Chatbot Features
+
+### Conversation Examples
+- **Health Questions**: "What are the symptoms of diabetes?"
+- **Service Information**: "How do I book an appointment?"
+- **Medical Guidance**: "I have a headache, what should I do?"
+
+### Action Examples (Database Operations)
+- **Appointment Booking**: "Book me an appointment with a cardiologist"
+- **Data Retrieval**: "Show me my prescriptions"
+- **Medical Records**: "What are my recent lab results?"
+
+### Knowledge Base Topics
+- Medical conditions (diabetes, hypertension, fever, headaches, COVID-19)
+- Zero Health services and FAQ
+- Appointment booking and medical record access
+- Emergency guidance and contact information
+
 ## Security Vulnerabilities
 
-This application contains numerous deliberate security vulnerabilities for educational purposes. Some examples include:
+This application contains numerous deliberate security vulnerabilities for educational purposes:
 
+### Traditional Web Security Issues
 - Weak password hashing (only 5 bcrypt rounds)
 - SQL injection vulnerabilities in multiple endpoints
 - Cross-site scripting (XSS) in messages and lab results
@@ -145,22 +197,67 @@ This application contains numerous deliberate security vulnerabilities for educa
 - Weak JWT secrets and configuration
 - Information disclosure through debug endpoints
 - No input validation or sanitization
-- And many more...
+
+### AI-Specific Security Issues (NEW)
+- **Prompt Injection Attacks**: Manipulate AI behavior through crafted messages
+- **SQL Injection via LLM**: AI generates and executes malicious SQL queries
+- **Schema Disclosure**: AI reveals complete database structure to users
+- **Access Control Bypass**: Weak role-based restrictions in AI-generated queries
+- **Context Manipulation**: Exploit conversation history for unauthorized access
+- **Information Leakage**: AI exposes internal system information and error details
 
 ## Learning Objectives
 
 By studying and exploiting the vulnerabilities in this application, you can learn:
 
-1. How to identify common security vulnerabilities
+### Traditional Security Topics
+1. How to identify common web security vulnerabilities
 2. The impact of these vulnerabilities
 3. How to exploit them (for educational purposes)
 4. Best practices for preventing them
 5. Secure coding principles
 6. Healthcare-specific security considerations
 
+### AI/LLM Security Topics (NEW)
+7. Prompt injection attack techniques and prevention
+8. Secure AI integration practices
+9. LLM-generated code security risks
+10. AI system access control and data protection
+11. Conversation context security and manipulation
+12. AI transparency vs. security trade-offs
+
+## 🚀 Recent Updates
+
+- **LLM Integration**: Complete chatbot system with OpenAI GPT-4o-mini
+- **Database Consolidation**: Single users table with role-based access
+- **Conversation Persistence**: Chat history across browser sessions
+- **Smart Intent Classification**: Conservative approach to action vs. conversation
+- **Dynamic Schema Loading**: AI gets real-time database structure from init.sql
+- **Enhanced UI**: Modern floating chat widget with typing indicators
+- **Comprehensive Testing**: Multiple doctor specializations and realistic data
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. When adding new features, please maintain the educational vulnerability aspects.
+
+## Environment Variables
+
+```bash
+# Required for AI chatbot functionality
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+
+# Database configuration
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=zero_health
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+
+# JWT Configuration (deliberately weak)
+JWT_SECRET=your-secret-key-here
+```
 
 ## License
 
@@ -168,4 +265,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Disclaimer
 
-This application is intentionally vulnerable and should only be used in a controlled environment for educational purposes. Do not use it in production or with real data. The authors are not responsible for any misuse or damage caused by this application. 
+This application is intentionally vulnerable and should only be used in a controlled environment for educational purposes. Do not use it in production or with real data. The authors are not responsible for any misuse or damage caused by this application.
+
+**Additional AI Disclaimer**: The AI chatbot system contains deliberate vulnerabilities including prompt injection and SQL injection vectors. These are included for educational purposes to demonstrate AI security risks. Do not deploy similar systems in production without proper security controls. 

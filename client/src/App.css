@@ -59,6 +59,17 @@ html {
   padding: 0 30px;
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-logo-image {
+  height: 40px;
+  width: auto;
+}
+
 .header-content h1 {
   font-size: 28px;
   font-weight: 600;
@@ -401,6 +412,11 @@ html {
   .header-content h1 {
     font-size: 24px;
   }
+
+  .header-logo-image {
+    height: 35px;
+    width: auto;
+  }
   
   .tab-navigation {
     flex-wrap: wrap;
@@ -448,5 +464,14 @@ html {
   
   .message-bubble {
     max-width: 90%;
+  }
+
+  .header-logo-image {
+    height: 30px;
+    width: auto;
+  }
+
+  .header-content h1 {
+    font-size: 20px;
   }
 } 

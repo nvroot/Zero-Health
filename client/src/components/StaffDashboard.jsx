@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/zero-health-logo.svg';
+import Chatbot from './Chatbot';
 
 const StaffDashboard = () => {
   const [user, setUser] = useState(null);
@@ -667,6 +668,9 @@ const StaffDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Add the Chatbot component */}
+      <Chatbot user={user} />
     </div>
   );
 };

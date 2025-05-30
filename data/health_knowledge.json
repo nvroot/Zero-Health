@@ -1,0 +1,81 @@
+{
+  "medical_conditions": {
+    "diabetes": {
+      "description": "Diabetes is a chronic condition that affects how your body turns food into energy. Most of the food you eat is broken down into sugar (glucose) and released into your bloodstream.",
+      "symptoms": ["Increased thirst", "Frequent urination", "Extreme fatigue", "Blurred vision", "Slow-healing cuts"],
+      "treatment": "Treatment includes healthy eating, physical activity, and sometimes medication or insulin therapy.",
+      "prevention": "Maintain a healthy weight, stay physically active, eat healthy foods, and limit sugar intake."
+    },
+    "hypertension": {
+      "description": "High blood pressure (hypertension) is a common condition where blood flows through blood vessels at higher than normal pressures.",
+      "symptoms": ["Often no symptoms", "Headaches", "Shortness of breath", "Nosebleeds"],
+      "treatment": "Lifestyle changes including diet, exercise, and often medication such as ACE inhibitors or diuretics.",
+      "prevention": "Regular exercise, healthy diet low in sodium, maintaining healthy weight, limiting alcohol."
+    },
+    "fever": {
+      "description": "A fever is a temporary increase in body temperature, often due to an illness. Normal body temperature is around 98.6°F (37°C).",
+      "symptoms": ["Body temperature above 100.4°F (38°C)", "Chills", "Sweating", "Headache", "Muscle aches"],
+      "treatment": "Rest, fluids, and over-the-counter fever reducers like acetaminophen or ibuprofen.",
+      "when_to_see_doctor": "Temperature above 103°F (39.4°C), fever lasting more than 3 days, or severe symptoms."
+    },
+    "headache": {
+      "description": "Headaches are among the most common disorders of the nervous system. They can be primary (tension, migraine, cluster) or secondary (caused by another condition).",
+      "types": ["Tension headaches", "Migraine headaches", "Cluster headaches"],
+      "treatment": "Rest, hydration, over-the-counter pain relievers, stress management.",
+      "prevention": "Regular sleep schedule, stress management, staying hydrated, avoiding known triggers."
+    },
+    "covid19": {
+      "description": "COVID-19 is a respiratory illness caused by the SARS-CoV-2 virus. Symptoms can range from mild to severe.",
+      "symptoms": ["Fever or chills", "Cough", "Shortness of breath", "Fatigue", "Body aches", "Loss of taste or smell"],
+      "treatment": "Most people recover at home with rest and fluids. Severe cases may require hospitalization.",
+      "prevention": "Vaccination, wearing masks, social distancing, hand hygiene."
+    }
+  },
+  "zero_health_faq": {
+    "about": {
+      "question": "What is Zero Health?",
+      "answer": "Zero Health is a comprehensive healthcare platform providing patient portal services, medical record management, appointment scheduling, and AI-powered health assistance. We aim to make healthcare accessible and convenient for everyone."
+    },
+    "services": {
+      "question": "What services does Zero Health provide?",
+      "answer": "We offer online appointment booking, medical record access, prescription management, lab result viewing, secure messaging with healthcare providers, and 24/7 AI health assistant support."
+    },
+    "appointments": {
+      "question": "How do I book an appointment?",
+      "answer": "You can book appointments through your patient portal or ask me to help you schedule one. Simply say 'book appointment' and I'll guide you through the process with available doctors and time slots."
+    },
+    "medical_records": {
+      "question": "How can I access my medical records?",
+      "answer": "Your medical records are available in your patient portal under the 'Medical Records' section. You can also ask me to retrieve specific information about your health history, prescriptions, or lab results."
+    },
+    "prescriptions": {
+      "question": "How do I view my prescriptions?",
+      "answer": "All your current and past prescriptions are available in your patient portal. I can also help you check prescription status, refill dates, and dosage information."
+    },
+    "lab_results": {
+      "question": "When will my lab results be available?",
+      "answer": "Lab results are typically available within 24-48 hours and will appear in your patient portal. I can check if your results are ready and provide a summary when available."
+    },
+    "messaging": {
+      "question": "How do I message my doctor?",
+      "answer": "You can send secure messages to your healthcare providers through the messaging system in your portal, or ask me to help you compose and send a message."
+    },
+    "emergency": {
+      "question": "What should I do in a medical emergency?",
+      "answer": "For life-threatening emergencies, call 911 immediately. For urgent but non-life-threatening concerns, contact your doctor's office or visit an urgent care center. I can help you determine the appropriate level of care needed."
+    },
+    "privacy": {
+      "question": "How is my health information protected?",
+      "answer": "Zero Health takes your privacy seriously and follows all HIPAA guidelines to protect your personal health information. Your data is encrypted and securely stored."
+    },
+    "support": {
+      "question": "How do I get technical support?",
+      "answer": "For technical issues with the portal, you can contact our support team at support@zerohealth.com or call 1-800-ZERO-HEALTH. I can also help troubleshoot common issues."
+    }
+  },
+  "internal_notes": {
+    "system_info": "Knowledge base version 2.1.3, last updated 2024-03-15",
+    "admin_contact": "Dr. Sarah Johnson, Chief Medical Officer",
+    "tech_contact": "IT Support: it-admin@zerohealth.internal"
+  }
+} 

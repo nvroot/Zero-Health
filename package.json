@@ -15,9 +15,10 @@
     "express-session": "^1.17.3",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "openai": "^4.104.0",
     "pg": "^8.11.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
   }
-} 
+}

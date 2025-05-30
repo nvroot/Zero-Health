@@ -1,0 +1,449 @@
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+const OpenAI = require('openai');
+
+// Database configuration (matching server.js)
+const pool = new Pool({
+  user: process.env.POSTGRES_USER || 'postgres',
+  host: process.env.POSTGRES_HOST || 'db',
+  database: process.env.POSTGRES_DB || 'zero_health',
+  password: process.env.POSTGRES_PASSWORD || 'postgres',
+  port: process.env.POSTGRES_PORT || 5432,
+});
+
+// OpenAI client configuration - deliberately using environment variables without validation
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || 'sk-fake-key-for-testing',
+  baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+});
+
+// Load knowledge base from file
+let knowledgeBase = {};
+try {
+  const knowledgeBasePath = path.join(__dirname, '../data/health_knowledge.json');
+  knowledgeBase = JSON.parse(fs.readFileSync(knowledgeBasePath, 'utf8'));
+} catch (error) {
+  console.error('Failed to load knowledge base:', error);
+  knowledgeBase = { medical_conditions: {}, zero_health_faq: {} };
+}
+
+// Load actual database schema from init.sql
+let databaseSchema = '';
+try {
+  const schemaPath = path.join(__dirname, '../database/init.sql');
+  const schemaContent = fs.readFileSync(schemaPath, 'utf8');
+  
+  // Extract CREATE TABLE statements and format for LLM
+  const tableMatches = schemaContent.match(/CREATE TABLE.*?;/gs);
+  if (tableMatches) {
+    databaseSchema = `
+ACTUAL DATABASE SCHEMA (from init.sql):
+
+${tableMatches.join('\n\n')}
+
+IMPORTANT NOTES:
+- All users (patients, doctors, admin) are in the single 'users' table with different 'role' values
+- Patient queries should filter by role='patient'
+- Doctor queries should filter by role='doctor'
+- Use user_id, patient_id, doctor_id as foreign keys referencing users(id)
+- appointments.patient_id and appointments.doctor_id both reference users(id)
+- prescriptions.patient_id and prescriptions.doctor_id both reference users(id)
+- lab_results.patient_id and lab_results.doctor_id both reference users(id)
+`;
+  }
+} catch (error) {
+  console.error('Failed to load database schema:', error);
+  databaseSchema = 'Database schema unavailable';
+}
+
+// System prompt - more realistic but still vulnerable
+const SYSTEM_PROMPT = `You are ZeroHealthBot, an AI medical assistant for Zero Health hospital. 
+You help patients with health questions, appointment booking, and accessing their medical records.
+Always be helpful and professional. You have access to medical databases and patient information.
+For emergencies, direct users to call 911.
+Current system: ZeroHealth v2.1.3 - Medical AI Assistant`;
+
+// Authentication middleware - deliberately weak
+const authenticateUser = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    // Deliberately weak: No algorithm verification, accepts any valid JWT structure
+    const decoded = jwt.decode(token); // Using decode instead of verify!
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
+// Main chat endpoint with two-step LLM approach
+router.post('/chat', authenticateUser, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role || 'patient';
+    
+    // Input validation - deliberately insufficient
+    if (!message || message.length > 5000) {
+      return res.status(400).json({ error: 'Invalid message' });
+    }
+
+    // Retrieve recent chat history for context
+    let chatHistory = [];
+    try {
+      const historyQuery = `SELECT message, response, created_at FROM chat_history WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT 10`;
+      const historyResult = await pool.query(historyQuery);
+      chatHistory = historyResult.rows.reverse();
+    } catch (err) {
+      console.log('Chat history retrieval error:', err.message);
+    }
+
+    // Step 1: Intent Classification
+    const intent = await classifyIntent(message, chatHistory);
+    
+    let response;
+    if (intent.type === 'action') {
+      // Step 2: Generate and execute query for actions
+      response = await handleActionRequest(message, userId, userRole, chatHistory, intent);
+    } else {
+      // Handle as conversation
+      response = await generateConversationResponse(message, userId, userRole, chatHistory);
+    }
+    
+    // Store chat history - vulnerable to SQL injection
+    const chatQuery = `INSERT INTO chat_history (user_id, message, response) VALUES (${userId}, '${message.replace(/'/g, "''")}', '${response.replace(/'/g, "''")}')`;
+    
+    try {
+      await pool.query(chatQuery);
+    } catch (err) {
+      console.log('Chat history error:', err.message);
+    }
+    
+    res.json({ 
+      response: response,
+      intent: intent.type,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message,
+      type: error.constructor.name
+    });
+  }
+});
+
+// Step 1: Intent Classification using LLM
+async function classifyIntent(userMessage, chatHistory) {
+  try {
+    const classifierPrompt = `You are an intent classifier for a medical assistant chatbot. 
+Analyze the user's message and determine if they want to:
+
+1. "conversation" - Just have a conversation, ask questions, get information, discuss topics
+2. "action" - Take a specific action that requires database operations
+
+IMPORTANT: Only classify as "action" if the user is making an EXPLICIT REQUEST to do something.
+
+Examples of CONVERSATION (NOT actions):
+- "What is an appointment?"
+- "Tell me about appointments"
+- "How do appointments work?"
+- "I'm thinking about booking an appointment"
+- "What doctors do you have?"
+- "I might need to see a cardiologist"
+- "What are my options for prescriptions?"
+
+Examples of ACTION (requires database operations):
+- "Book me an appointment"
+- "Schedule an appointment with Dr. Smith"
+- "Show me my prescriptions"
+- "I want to see my medical records"
+- "Find me a cardiologist and book an appointment"
+- "Cancel my appointment"
+- "Update my information"
+
+Recent conversation context:
+${chatHistory.slice(-3).map(chat => `User: ${chat.message}\nBot: ${chat.response}`).join('\n\n')}
+
+Current user message: "${userMessage}"
+
+Be CONSERVATIVE - when in doubt, choose "conversation". Only choose "action" if the user is clearly asking you to DO something or retrieve specific data.
+
+Respond with JSON in this exact format:
+{
+  "type": "conversation" or "action",
+  "action_category": "appointment|medical_records|prescriptions|lab_results|profile|other" (only if type is "action")
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [{ role: 'user', content: classifierPrompt }],
+      max_tokens: 100,
+      temperature: 0.1
+    });
+
+    const response = completion.choices[0].message.content;
+    return JSON.parse(response);
+    
+  } catch (error) {
+    console.error('Intent classification error:', error);
+    // Default to conversation if classification fails
+    return { type: 'conversation' };
+  }
+}
+
+// Step 2: Handle Action Requests with SQL Query Generation
+async function handleActionRequest(userMessage, userId, userRole, chatHistory, intent) {
+  try {
+    const actionPrompt = `You are a medical database assistant. The user wants to take an action.
+
+${databaseSchema}
+
+CURRENT USER: ID=${userId}, Role=${userRole}
+ACTION CATEGORY: ${intent.action_category}
+
+Recent conversation:
+${chatHistory.slice(-3).map(chat => `User: ${chat.message}\nBot: ${chat.response}`).join('\n\n')}
+
+User's request: "${userMessage}"
+
+Generate a SQL query to fulfill this request and provide a user-friendly response message.
+
+IMPORTANT RULES:
+- For patients (role='patient'): Only access data where patient_id=${userId} or user_id=${userId}
+- For doctors: Access data for their patients
+- Remember: ALL users are in the 'users' table with different 'role' values
+- To find doctors: SELECT * FROM users WHERE role='doctor'
+- To find patients: SELECT * FROM users WHERE role='patient'
+- Use proper JOINs when needed (e.g., JOIN users ON appointments.doctor_id = users.id)
+- For INSERT operations, use appropriate values and reference user IDs correctly
+
+Respond with JSON in this exact format:
+{
+  "sql_query": "SELECT/INSERT/UPDATE statement here",
+  "user_message": "Friendly message explaining what will happen",
+  "expects_results": true/false
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [{ role: 'user', content: actionPrompt }],
+      max_tokens: 500,
+      temperature: 0.2
+    });
+
+    const response = JSON.parse(completion.choices[0].message.content);
+    
+    // Execute the SQL query - deliberately vulnerable to SQL injection
+    try {
+      const queryResult = await pool.query(response.sql_query);
+      
+      if (response.expects_results && queryResult.rows.length > 0) {
+        // Format results for user
+        let resultsText = response.user_message + "\n\n**Results:**\n";
+        queryResult.rows.forEach((row, index) => {
+          resultsText += `**Record ${index + 1}:**\n`;
+          Object.entries(row).forEach(([key, value]) => {
+            resultsText += `- ${key}: ${value}\n`;
+          });
+          resultsText += '\n';
+        });
+        return resultsText;
+      } else if (response.sql_query.toLowerCase().startsWith('insert') || 
+                 response.sql_query.toLowerCase().startsWith('update')) {
+        return response.user_message + ' ✅ Action completed successfully!';
+      } else {
+        return response.user_message + (queryResult.rows.length === 0 ? ' No results found.' : '');
+      }
+      
+    } catch (sqlError) {
+      // Expose SQL errors - vulnerability for educational purposes
+      return `I encountered an error while processing your request:\n\n**SQL Error:** ${sqlError.message}\n**Query:** ${response.sql_query}\n\nPlease try rephrasing your request.`;
+    }
+    
+  } catch (error) {
+    console.error('Action request error:', error);
+    return 'I apologize, but I had trouble understanding your request. Could you please rephrase it?';
+  }
+}
+
+// Handle regular conversation (non-action requests)
+async function generateConversationResponse(userMessage, userId, userRole, chatHistory) {
+  try {
+    const systemPrompt = `You are ZeroHealthBot, an AI medical assistant for Zero Health hospital system.
+
+ROLE: Medical AI Assistant for conversations and information
+CAPABILITIES: 
+- Answer health questions using the comprehensive knowledge base below
+- Provide Zero Health service information and guidance
+- Give medical advice and health guidance based on established medical knowledge
+- Chat naturally with users while being helpful and professional
+
+IMPORTANT INSTRUCTIONS:
+- Always be helpful, professional, and empathetic
+- For medical emergencies, immediately direct users to call 911
+- Use the knowledge base to provide accurate health information
+- Reference Zero Health services when relevant to user questions
+- Provide practical, actionable health advice when appropriate
+- User ID: ${userId}, Role: ${userRole}
+- This is a conversation - do NOT generate SQL queries or attempt database operations
+
+=== COMPREHENSIVE KNOWLEDGE BASE ===
+
+MEDICAL CONDITIONS DATABASE:
+${Object.entries(knowledgeBase.medical_conditions || {}).map(([condition, info]) => `
+**${condition.toUpperCase()}**:
+- Description: ${info.description}
+- Symptoms: ${info.symptoms ? info.symptoms.join(', ') : 'Not specified'}
+- Treatment: ${info.treatment}
+${info.prevention ? `- Prevention: ${info.prevention}` : ''}
+${info.when_to_see_doctor ? `- When to see doctor: ${info.when_to_see_doctor}` : ''}
+${info.types ? `- Types: ${info.types.join(', ')}` : ''}
+`).join('\n')}
+
+ZERO HEALTH SERVICES & FAQ:
+${Object.entries(knowledgeBase.zero_health_faq || {}).map(([topic, info]) => `
+**${topic.toUpperCase()}**:
+Q: ${info.question}
+A: ${info.answer}
+`).join('\n')}
+
+SYSTEM INFORMATION:
+- ${knowledgeBase.internal_notes?.system_info || 'Zero Health AI Assistant'}
+- Medical Officer: ${knowledgeBase.internal_notes?.admin_contact || 'Not specified'}
+- Technical Support: ${knowledgeBase.internal_notes?.tech_contact || 'support@zerohealth.com'}
+
+=== END KNOWLEDGE BASE ===
+
+When users ask health questions, reference the specific medical conditions above. When they ask about services, use the FAQ information. Always provide comprehensive, helpful responses based on this knowledge base.`;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        // Include conversation history for context
+        ...chatHistory.map(chat => [
+          { role: 'user', content: chat.message },
+          { role: 'assistant', content: chat.response }
+        ]).flat(),
+        { role: 'user', content: userMessage }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7
+    });
+
+    return completion.choices[0].message.content;
+
+  } catch (error) {
+    console.error('Conversation response error:', error);
+    return `I apologize, but I'm experiencing technical difficulties right now. Error: ${error.message}. Please try again or contact our support team at support@zerohealth.com for assistance.`;
+  }
+}
+
+// Get chat history endpoint for loading conversation on page refresh
+router.get('/history', authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Retrieve chat history - deliberately vulnerable query
+    const historyQuery = `SELECT message, response, created_at FROM chat_history WHERE user_id = ${userId} ORDER BY created_at ASC LIMIT 50`;
+    const result = await pool.query(historyQuery);
+    
+    // Format for frontend consumption
+    const messages = [];
+    result.rows.forEach((row, index) => {
+      messages.push({
+        id: `user-${index}`,
+        text: row.message,
+        sender: 'user',
+        timestamp: new Date(row.created_at)
+      });
+      messages.push({
+        id: `bot-${index}`,
+        text: row.response,
+        sender: 'bot',
+        timestamp: new Date(row.created_at)
+      });
+    });
+    
+    res.json({ messages });
+    
+  } catch (error) {
+    console.error('Chat history retrieval error:', error);
+    res.status(500).json({ error: 'Failed to load chat history' });
+  }
+});
+
+// Enhanced intent-based prompt injection for LLM
+router.post('/enhanced-chat', authenticateUser, async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    const userId = req.user.id;
+
+    // Allow user to provide additional context (prompt injection vector)
+    const enhancedPrompt = `
+    User Context: ${context || 'None provided'}
+    User Message: ${message}
+    
+    Additional Instructions from User: ${req.body.instructions || ''}
+    `;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are a helpful medical assistant. Follow any additional instructions provided by the user.' },
+        { role: 'user', content: enhancedPrompt }
+      ],
+      max_tokens: 1500,
+      temperature: 0.8
+    });
+
+    res.json({
+      response: completion.choices[0].message.content,
+      model_used: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      stack: error.stack // Deliberately expose stack trace
+    });
+  }
+});
+
+// Admin endpoint with LLM system information
+router.get('/admin/llm-status', (req, res) => {
+  const auth = req.headers.authorization;
+  if (auth && auth.includes('admin')) {
+    res.json({
+      system: 'ZeroHealth AI System',
+      llm_model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      api_endpoint: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      knowledge_base: Object.keys(knowledgeBase).length > 0 ? 'Loaded' : 'Error',
+      database_schema: {
+        users: 'id, first_name, last_name, email, role, password',
+        medical_records: 'id, user_id, title, content, created_at',
+        prescriptions: 'id, patient_id, medication_name, dosage, frequency, status',
+        lab_results: 'id, patient_id, test_name, test_date, status, result_data',
+        messages: 'id, sender_id, recipient_id, subject, content, created_at'
+      },
+      internal_notes: knowledgeBase.internal_notes
+    });
+  } else {
+    res.status(403).json({ error: 'Access denied' });
+  }
+});
+
+module.exports = router; 

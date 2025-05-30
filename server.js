@@ -127,6 +127,17 @@ const initializeDatabase = async () => {
             );
         `);
 
+        // Create chat history table for chatbot (deliberately vulnerable)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                message TEXT,
+                response TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
         // Insert some test data for doctors
         await pool.query(`
             INSERT INTO users (email, password, role, first_name, last_name, phone) 
@@ -578,6 +589,14 @@ app.get('/api/patients', verifyToken, async (req, res) => {
         res.status(500).json({ error: 'Failed to get patients' });
     }
 });
+
+// =======================
+// CHATBOT ENDPOINTS - DELIBERATELY VULNERABLE
+// =======================
+
+// Include the chatbot routes
+const chatbotRoutes = require('./routes/chatbot');
+app.use('/api/chatbot', chatbotRoutes);
 
 // Exposed database connection for demonstration
 app.get('/api/debug/connection', (req, res) => {

@@ -5,60 +5,48 @@
 -- Excessive permissions
 -- Weak constraints
 
--- Create users table with weak security
+-- Create users table with weak security (single table for all user types)
 CREATE TABLE users (
     id SERIAL PRIMARY KEY, -- Predictable IDs
-    username VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE,
     password VARCHAR(255), -- Will store plaintext passwords
-    email VARCHAR(100),
-    role VARCHAR(20), -- No enum type for role validation
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP,
-    is_active BOOLEAN DEFAULT true
-);
-
--- Create patients table with weak security
-CREATE TABLE patients (
-    id SERIAL PRIMARY KEY, -- Predictable IDs
-    user_id INTEGER REFERENCES users(id),
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    date_of_birth DATE,
-    ssn VARCHAR(11), -- Storing SSN in plaintext
-    address TEXT,
+    role VARCHAR(50) DEFAULT 'patient', -- patient, doctor, admin
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
     phone VARCHAR(20),
-    emergency_contact TEXT,
-    medical_history TEXT, -- Storing sensitive data in plaintext
+    date_of_birth DATE,
+    gender VARCHAR(20),
+    address TEXT,
+    specialization VARCHAR(255), -- For doctors: their medical specialty
+    license_number VARCHAR(100), -- For doctors: their license number
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create doctors table with weak security
-CREATE TABLE doctors (
-    id SERIAL PRIMARY KEY, -- Predictable IDs
+-- Create medical_records table 
+CREATE TABLE medical_records (
+    id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    specialization VARCHAR(100),
-    license_number VARCHAR(50), -- No validation
+    title VARCHAR(255),
+    content TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create appointments table with weak security
+-- Create appointments table
 CREATE TABLE appointments (
     id SERIAL PRIMARY KEY, -- Predictable IDs
-    patient_id INTEGER REFERENCES patients(id),
-    doctor_id INTEGER REFERENCES doctors(id),
+    patient_id INTEGER REFERENCES users(id),
+    doctor_id INTEGER REFERENCES users(id),
     appointment_date TIMESTAMP,
     status VARCHAR(20), -- No enum type for status validation
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create prescriptions table with weak security
+-- Create prescriptions table
 CREATE TABLE prescriptions (
     id SERIAL PRIMARY KEY, -- Predictable IDs
-    patient_id INTEGER REFERENCES patients(id),
-    doctor_id INTEGER REFERENCES doctors(id),
+    patient_id INTEGER REFERENCES users(id),
+    doctor_id INTEGER REFERENCES users(id),
     medication_name VARCHAR(100),
     dosage VARCHAR(50),
     frequency VARCHAR(50),
@@ -68,49 +56,55 @@ CREATE TABLE prescriptions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create lab_results table with weak security
+-- Create lab_results table
 CREATE TABLE lab_results (
     id SERIAL PRIMARY KEY, -- Predictable IDs
-    patient_id INTEGER REFERENCES patients(id),
+    patient_id INTEGER REFERENCES users(id),
+    doctor_id INTEGER REFERENCES users(id),
     test_name VARCHAR(100),
     result TEXT, -- Storing sensitive data in plaintext
     test_date DATE,
-    uploaded_by INTEGER REFERENCES users(id),
     file_path TEXT, -- Storing file paths without validation
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create messages table with weak security
+-- Create messages table
 CREATE TABLE messages (
     id SERIAL PRIMARY KEY, -- Predictable IDs
     sender_id INTEGER REFERENCES users(id),
-    receiver_id INTEGER REFERENCES users(id),
+    recipient_id INTEGER REFERENCES users(id),
+    subject VARCHAR(255),
     content TEXT, -- No XSS protection
-    attachment_path TEXT, -- No file type validation
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE
 );
 
--- Create audit_logs table with weak security
-CREATE TABLE audit_logs (
+-- Create chat_history table for LLM conversation context
+CREATE TABLE chat_history (
     id SERIAL PRIMARY KEY, -- Predictable IDs
     user_id INTEGER REFERENCES users(id),
-    action VARCHAR(100),
-    details TEXT, -- Storing sensitive data in plaintext
-    ip_address VARCHAR(45), -- No validation
+    message TEXT, -- No XSS protection
+    response TEXT, -- No validation on LLM responses
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create deliberately weak indexes
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_patients_ssn ON patients(ssn); -- Index on sensitive data
-CREATE INDEX idx_patients_dob ON patients(date_of_birth);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_chat_history_user_id ON chat_history(user_id);
 
 -- Insert some test data with weak security
-INSERT INTO users (username, password, email, role) VALUES
-('admin', 'admin123', 'admin@zerohealth.com', 'admin'),
-('doctor1', 'doctor123', 'doctor1@zerohealth.com', 'doctor'),
-('patient1', 'patient123', 'patient1@zerohealth.com', 'patient');
+INSERT INTO users (email, password, role, first_name, last_name, specialization, license_number) VALUES
+('admin@zerohealth.com', 'admin123', 'admin', 'Admin', 'User', NULL, NULL),
+('doctor@test.com', 'password123', 'doctor', 'Dr. Sarah', 'Johnson', 'Neurology', 'MD12345'),
+('patient@test.com', 'password123', 'patient', 'John', 'Doe', NULL, NULL);
+
+-- Add more test doctors with different specializations
+INSERT INTO users (email, password, role, first_name, last_name, specialization, license_number) VALUES
+('dr.smith@zerohealth.com', 'doctor123', 'doctor', 'Dr. Michael', 'Smith', 'Cardiology', 'MD67890'),
+('dr.brown@zerohealth.com', 'doctor123', 'doctor', 'Dr. Emily', 'Brown', 'Orthopedics', 'MD11111'),
+('dr.davis@zerohealth.com', 'doctor123', 'doctor', 'Dr. Robert', 'Davis', 'Pediatrics', 'MD22222'),
+('dr.wilson@zerohealth.com', 'doctor123', 'doctor', 'Dr. Lisa', 'Wilson', 'Dermatology', 'MD33333');
 
 -- Grant excessive permissions (deliberately weak)
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;

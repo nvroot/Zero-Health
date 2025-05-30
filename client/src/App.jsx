@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './components/LandingPage.jsx';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
-import Dashboard from './components/Dashboard.jsx';
 import PatientPortal from './components/PatientPortal.jsx';
 import StaffDashboard from './components/StaffDashboard.jsx';
 import './App.css';
@@ -57,15 +56,6 @@ const App = () => {
             element={
               <PrivateRoute>
                 <RoleBasedDashboard />
-              </PrivateRoute>
-            } 
-          />
-          {/* Legacy dashboard route for backward compatibility */}
-          <Route 
-            path="/old-dashboard" 
-            element={
-              <PrivateRoute>
-                <Dashboard />
               </PrivateRoute>
             } 
           />

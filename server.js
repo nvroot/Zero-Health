@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Deliberately weak database configuration
+// Database configuration
 const pool = new Pool({
     user: process.env.POSTGRES_USER || 'postgres',
     host: process.env.POSTGRES_HOST || 'db',
@@ -36,124 +36,8 @@ const pool = new Pool({
     port: process.env.POSTGRES_PORT || 5432,
 });
 
-// Database initialization
-const initializeDatabase = async () => {
-    try {
-        // Create users table with expanded role fields
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(255) UNIQUE,
-                password VARCHAR(255),
-                role VARCHAR(50) DEFAULT 'patient',
-                first_name VARCHAR(255),
-                last_name VARCHAR(255),
-                phone VARCHAR(20),
-                date_of_birth DATE,
-                gender VARCHAR(20),
-                address TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create medical_records table with no access control
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS medical_records (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
-                title VARCHAR(255),
-                content TEXT,
-                file_path VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create appointments table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS appointments (
-                id SERIAL PRIMARY KEY,
-                patient_id INTEGER REFERENCES users(id),
-                doctor_id INTEGER REFERENCES users(id),
-                appointment_date TIMESTAMP,
-                status VARCHAR(50) DEFAULT 'scheduled',
-                reason TEXT,
-                notes TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create lab_results table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS lab_results (
-                id SERIAL PRIMARY KEY,
-                patient_id INTEGER REFERENCES users(id),
-                doctor_id INTEGER REFERENCES users(id),
-                test_name VARCHAR(255),
-                result_data TEXT,
-                test_date DATE,
-                status VARCHAR(50) DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create prescriptions table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS prescriptions (
-                id SERIAL PRIMARY KEY,
-                patient_id INTEGER REFERENCES users(id),
-                doctor_id INTEGER REFERENCES users(id),
-                medication_name VARCHAR(255),
-                dosage VARCHAR(100),
-                frequency VARCHAR(100),
-                duration VARCHAR(100),
-                instructions TEXT,
-                status VARCHAR(50) DEFAULT 'prescribed',
-                prescribed_date DATE DEFAULT CURRENT_DATE,
-                collected_date DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create messages table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS messages (
-                id SERIAL PRIMARY KEY,
-                sender_id INTEGER REFERENCES users(id),
-                recipient_id INTEGER REFERENCES users(id),
-                subject VARCHAR(255),
-                content TEXT,
-                is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Create chat history table for chatbot (deliberately vulnerable)
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS chat_history (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER,
-                message TEXT,
-                response TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Insert some test data for doctors
-        await pool.query(`
-            INSERT INTO users (email, password, role, first_name, last_name, phone) 
-            VALUES 
-                ('doctor@test.com', '$2a$05$L5v99KsS2oVqeSvtIEMAh.Q.nZyTcJUk5VazpH9Fi6UdwchzsszhS', 'doctor', 'Dr. John', 'Smith', '555-0101'),
-                ('pharmacist@test.com', '$2a$05$L5v99KsS2oVqeSvtIEMAh.Q.nZyTcJUk5VazpH9Fi6UdwchzsszhS', 'pharmacist', 'Jane', 'Doe', '555-0102')
-            ON CONFLICT (email) DO NOTHING;
-        `);
-
-        console.log('Database initialized successfully');
-    } catch (error) {
-        console.error('Database initialization error:', error);
-    }
-};
-
-initializeDatabase();
+// The sample data script will handle all database initialization
+// No need for duplicate schema creation here
 
 // Deliberately weak JWT verification middleware
 const verifyToken = (req, res, next) => {
@@ -631,20 +515,27 @@ async function initializeSampleDataOnStartup() {
 
 // Wait for database and initialize sample data before starting server
 const startServer = async () => {
-    // Wait a bit for database to be ready
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    // Initialize sample data
-    await initializeSampleDataOnStartup();
-    
-    // Start the server
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-        console.log(`🌐 Server running on port ${PORT}`);
-        console.log('⚠️ Warning: This is a deliberately vulnerable application for educational purposes');
-        console.log('📧 Patient login: patient@test.com / password123');
-        console.log('👩‍⚕️ Doctor login: doctor@test.com / password123');
-    });
+    try {
+        // Wait for database to be ready
+        const { waitForDatabase } = require('./scripts/wait-for-db');
+        await waitForDatabase();
+        
+        // Initialize sample data
+        await initializeSampleDataOnStartup();
+        
+        // Start the server
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () => {
+            console.log(`🌐 Server running on port ${PORT}`);
+            console.log('⚠️ Warning: This is a deliberately vulnerable application for educational purposes');
+            console.log('📧 Patient login: patient@test.com / password123');
+            console.log('👩‍⚕️ Doctor login: doctor@test.com / password123');
+        });
+    } catch (error) {
+        console.error('💥 Database connection failed:', error.message);
+        console.log('🔄 Retrying in 5 seconds...');
+        setTimeout(() => startServer(), 5000);
+    }
 };
 
 // Start the server with initialization

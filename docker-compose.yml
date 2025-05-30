@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   server:
     build: .
@@ -28,10 +33,9 @@ services:
       - OPENAI_MODEL=gpt-4o-mini
       - OPENAI_BASE_URL=https://api.openai.com/v1
     depends_on:
-      - db
-    volumes:
-      - .:/app
-      - /app/node_modules
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   client:
     build: ./client
@@ -41,9 +45,7 @@ services:
       - REACT_APP_API_URL=http://localhost:5000
     depends_on:
       - server
-    volumes:
-      - ./client:/app
-      - /app/node_modules
+    restart: unless-stopped
 
 volumes:
   postgres_data: 

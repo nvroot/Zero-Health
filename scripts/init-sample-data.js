@@ -165,6 +165,14 @@ async function initializeSampleData() {
         ['Samuel', 'L Jackson', 'patient@test.com', hashedPassword, 'patient', '1985-06-15', '+1-555-0123']
       );
       
+      // Add additional test patient
+      await pool.query(
+        `INSERT INTO users (first_name, last_name, email, password, role, date_of_birth, phone) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, date_of_birth = $6, phone = $7`,
+        ['Alice', 'Johnson', 'patient2@test.com', hashedPassword, 'patient', '1990-03-20', '+1-555-0124']
+      );
+      
       // Add test doctor
       await pool.query(
         `INSERT INTO users (first_name, last_name, email, password, role, phone) 
@@ -353,6 +361,26 @@ async function initializeSampleData() {
              VALUES ($1, $2, $3, $4, $5)`,
             [patientId, doctorId, appointmentDate, status, notes]
           );
+        }
+        
+        // Add appointments for additional patient
+        const patient2Result = await pool.query('SELECT id FROM users WHERE email = $1', ['patient2@test.com']);
+        if (patient2Result.rows.length > 0) {
+          const patient2Id = patient2Result.rows[0].id;
+          
+          const additionalAppointments = [
+            ['2024-01-10 10:00:00', 'completed', 'Migraine headache treatment and consultation'],
+            ['2024-02-15 14:00:00', 'completed', 'Routine wellness checkup and vaccinations'],
+            ['2024-12-20 09:30:00', 'scheduled', 'Follow-up appointment for blood pressure monitoring']
+          ];
+          
+          for (const [appointmentDate, status, reason] of additionalAppointments) {
+            await pool.query(
+              `INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, reason) 
+               VALUES ($1, $2, $3, $4, $5)`,
+              [patient2Id, doctorId, appointmentDate, status, reason]
+            );
+          }
         }
         
         console.log('✅ Sample appointments created successfully!');

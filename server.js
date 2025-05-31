@@ -907,50 +907,194 @@ app.put('/api/users/profile', verifyToken, async (req, res) => {
     }
 });
 
-// ===== ADMIN SYSTEM MONITORING - Command Injection vulnerability =====
-app.post('/api/admin/system', verifyToken, async (req, res) => {
+/**
+ * @swagger
+ * /api/reports/generate:
+ *   post:
+ *     tags: [Reports]
+ *     summary: Generate PDF medical report
+ *     description: Generate a comprehensive PDF report for a patient including their medical history, recent appointments, and lab results. Requires doctor or admin privileges.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - patient_id
+ *               - report_type
+ *             properties:
+ *               patient_id:
+ *                 type: integer
+ *                 description: ID of the patient for whom to generate the report
+ *                 example: 2
+ *               report_type:
+ *                 type: string
+ *                 description: Type of medical report to generate
+ *                 enum: [comprehensive, lab_results, appointment_summary, prescription_history]
+ *                 example: comprehensive
+ *               format:
+ *                 type: string
+ *                 description: Page size for the PDF document
+ *                 enum: [A4, Letter, Legal, A3]
+ *                 default: A4
+ *                 example: A4
+ *               orientation:
+ *                 type: string
+ *                 description: Page orientation for the PDF document
+ *                 enum: [portrait, landscape]
+ *                 default: portrait
+ *                 example: portrait
+ *     responses:
+ *       200:
+ *         description: PDF report generated successfully
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Doctor or admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Patient not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: PDF generation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: PDF generation failed
+ *                 details:
+ *                   type: string
+ *                   example: wkhtmltopdf command execution failed
+ *                 command:
+ *                   type: string
+ *                   example: wkhtmltopdf --page-size A4 --orientation portrait --title "John Smith Medical Report" --author "John Smith" "/path/to/file.html" "/path/to/file.pdf"
+ */
+// ===== PDF REPORT GENERATION - Command Injection vulnerability =====
+app.post('/api/reports/generate', verifyToken, async (req, res) => {
     try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Admin access required' });
+        if (req.user.role !== 'doctor' && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Doctor or admin access required' });
         }
         
-        const { action, target } = req.body;
+        const { patient_id, report_type, format = 'A4', orientation = 'portrait' } = req.body;
         
-        // Command injection vulnerability - no input sanitization
-        let command;
-        switch (action) {
-            case 'ping':
-                command = `ping -c 3 ${target}`;
-                break;
-            case 'disk':
-                command = `df -h ${target || '/'}`;
-                break;
-            case 'process':
-                command = `ps aux | grep ${target || 'node'}`;
-                break;
-            default:
-                return res.status(400).json({ error: 'Invalid action' });
+        if (!patient_id || !report_type) {
+            return res.status(400).json({ error: 'Patient ID and report type required' });
         }
         
-        console.log('Admin executing system command:', command);
+        // Fetch patient data to include in report
+        const patientResult = await pool.query(
+            'SELECT first_name, last_name, email FROM users WHERE id = $1 AND role = $2',
+            [patient_id, 'patient']
+        );
+        
+        if (patientResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+        
+        const patient = patientResult.rows[0];
+        const patientName = `${patient.first_name} ${patient.last_name}`;
+        
+        // Fetch recent appointment data (patient-controlled content)
+        const appointmentResult = await pool.query(
+            'SELECT reason, appointment_date FROM appointments WHERE patient_id = $1 ORDER BY appointment_date DESC LIMIT 3',
+            [patient_id]
+        );
+        
+        // Generate HTML content for the report
+        let appointmentHtml = '';
+        if (appointmentResult.rows.length > 0) {
+            appointmentHtml = appointmentResult.rows.map(apt => 
+                `<p>• ${apt.reason} (${new Date(apt.appointment_date).toLocaleDateString()})</p>`
+            ).join('');
+        }
+        
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Medical Report - ${patientName}</title></head>
+        <body>
+            <h1>Zero Health Medical Report</h1>
+            <h2>Patient: ${patientName}</h2>
+            <p>Patient ID: ${patient_id}</p>
+            <p>Report Type: ${report_type}</p>
+            <p>Generated: ${new Date().toISOString()}</p>
+            <h3>Recent Appointments:</h3>
+            ${appointmentHtml}
+        </body>
+        </html>
+        `;
+        
+        // Save temporary HTML file
+        const tempDir = path.join(__dirname, 'temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir);
+        }
+        
+        const htmlFile = path.join(tempDir, `report_${patient_id}_${Date.now()}.html`);
+        const pdfFile = path.join(tempDir, `report_${patient_id}_${Date.now()}.pdf`);
+        
+        fs.writeFileSync(htmlFile, htmlContent);
+        
+        // Command injection vulnerability - patient name used directly in PDF metadata
+        // An attacker could set their name to: John; rm -rf /tmp; echo Smith
+        const command = `wkhtmltopdf --page-size ${format} --orientation ${orientation} --title "${patientName} Medical Report" --author "${patientName}" "${htmlFile}" "${pdfFile}"`;
+        
+        console.log('Generating PDF with command:', command);
         
         const { exec } = require('child_process');
         exec(command, (error, stdout, stderr) => {
+            // Clean up temp HTML file
+            if (fs.existsSync(htmlFile)) {
+                fs.unlinkSync(htmlFile);
+            }
+            
             if (error) {
-                res.status(500).json({ error: error.message, command: command });
-            } else {
-                res.json({ 
-                    output: stdout,
-                    error: stderr,
-                    command: command,
-                    timestamp: new Date().toISOString()
+                console.error('PDF generation error:', error);
+                res.status(500).json({ 
+                    error: 'PDF generation failed', 
+                    details: error.message,
+                    command: command  // Exposing command for debugging
                 });
+            } else {
+                // Check if PDF was created
+                if (fs.existsSync(pdfFile)) {
+                    res.download(pdfFile, `medical_report_${patientName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, (downloadError) => {
+                        // Clean up PDF file after download
+                        if (fs.existsSync(pdfFile)) {
+                            fs.unlinkSync(pdfFile);
+                        }
+                    });
+                } else {
+                    res.status(500).json({ error: 'PDF file not generated' });
+                }
             }
         });
         
     } catch (error) {
-        console.error('System command error:', error);
-        res.status(500).json({ error: 'System command failed' });
+        console.error('Report generation error:', error);
+        res.status(500).json({ error: 'Failed to generate report' });
     }
 });
 

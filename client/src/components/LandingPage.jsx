@@ -139,6 +139,38 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Security Assurance Section */}
+      <section className="security-assurance">
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">Security Assurance</h2>
+            <p className="section-subtitle">We're proud of our anti-compliance achievements</p>
+          </div>
+          <div className="certifications-grid">
+            <div className="certification-badge">
+              <div className="cert-icon">🚫</div>
+              <h3>Certified HIPAA Non-Compliant</h3>
+              <p>We've worked hard to violate every healthcare privacy regulation</p>
+            </div>
+            <div className="certification-badge">
+              <div className="cert-icon">🏴‍☠️</div>
+              <h3>GDPR Defiant</h3>
+              <p>Your unprotected health information is safely unprotected.</p>
+            </div>
+            <div className="certification-badge">
+              <div className="cert-icon">🗑️</div>
+              <h3>SUCK 2 Type 2Assessed</h3>
+              <p>Successfully Undermining Corporate Kontrols - Level 2</p>
+            </div>
+            <div className="certification-badge">
+              <div className="cert-icon">❌</div>
+              <h3>ISO 2700NONE Certified</h3>
+              <p>Our favorite control is Ctrl+Z.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Modern Testimonials Section */}
       <section id="testimonials" className="testimonials">
         <div className="section-container">
@@ -771,6 +803,68 @@ const LandingPage = () => {
           font-size: 0.875rem;
           text-align: center;
           color: var(--color-teal-zero);
+        }
+
+        /* Security Assurance Section */
+        .security-assurance {
+          padding: 6rem 0;
+          background: linear-gradient(135deg, var(--color-breach-red-10) 0%, var(--color-yellow-flag-10) 100%);
+          border-top: 2px solid var(--color-breach-red-30);
+        }
+
+        .certifications-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+        }
+
+        .certification-badge {
+          background: rgba(255, 255, 255, 0.9);
+          border: 2px solid var(--color-breach-red);
+          border-radius: 1.5rem;
+          padding: 2rem;
+          text-align: center;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .certification-badge::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, var(--color-breach-red) 0%, var(--color-yellow-flag) 50%, var(--color-breach-red) 100%);
+        }
+
+        .certification-badge:hover {
+          transform: translateY(-8px) rotate(1deg);
+          box-shadow: var(--shadow-elevated);
+          border-color: var(--color-yellow-flag);
+        }
+
+        .cert-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+          display: block;
+          filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .certification-badge h3 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--color-breach-red);
+          margin-bottom: 1rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .certification-badge p {
+          color: var(--color-deep-breach);
+          line-height: 1.5;
+          font-weight: 500;
         }
 
         /* Responsive Design */

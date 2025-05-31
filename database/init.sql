@@ -38,6 +38,7 @@ CREATE TABLE appointments (
     doctor_id INTEGER REFERENCES users(id),
     appointment_date TIMESTAMP,
     status VARCHAR(20), -- No enum type for status validation
+    reason TEXT, -- Added reason field for appointment booking
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -78,6 +79,7 @@ CREATE TABLE messages (
     recipient_id INTEGER REFERENCES users(id),
     subject VARCHAR(255),
     content TEXT, -- No XSS protection
+    attachment_path TEXT, -- Added field for image attachments
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT FALSE
 );

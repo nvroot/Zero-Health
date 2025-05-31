@@ -638,15 +638,16 @@ app.get('/api/messages', verifyToken, async (req, res) => {
     }
 });
 
-app.post('/api/messages', verifyToken, async (req, res) => {
+app.post('/api/messages', verifyToken, upload.single('attachment'), async (req, res) => {
     try {
         const { recipient_id, subject, content } = req.body;
         const sender_id = req.user.id;
+        const attachment_path = req.file ? req.file.filename : null;
         
-        // SQL injection vulnerable query
+        // SQL injection vulnerable query - including attachment support
         const result = await pool.query(
-            `INSERT INTO messages (sender_id, recipient_id, subject, content) 
-             VALUES ('${sender_id}', '${recipient_id}', '${subject}', '${content}') 
+            `INSERT INTO messages (sender_id, recipient_id, subject, content, attachment_path) 
+             VALUES ('${sender_id}', '${recipient_id}', '${subject}', '${content}', '${attachment_path}') 
              RETURNING *`
         );
         

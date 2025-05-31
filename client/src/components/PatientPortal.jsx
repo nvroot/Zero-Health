@@ -26,6 +26,7 @@ const PatientPortal = () => {
     subject: '',
     content: ''
   });
+  const [messageAttachment, setMessageAttachment] = useState(null);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const [showMessageForm, setShowMessageForm] = useState(false);
 
@@ -170,14 +171,25 @@ const PatientPortal = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append('recipient_id', newMessage.recipient_id);
+      formData.append('subject', newMessage.subject);
+      formData.append('content', newMessage.content);
+      if (messageAttachment) {
+        formData.append('attachment', messageAttachment);
+      }
+      
       const response = await fetch('http://localhost:5000/api/messages', {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(newMessage)
+        headers: {
+          'Authorization': getAuthToken() ? `Bearer ${getAuthToken()}` : ''
+        },
+        body: formData
       });
       
       if (response.ok) {
         setNewMessage({ recipient_id: '', subject: '', content: '' });
+        setMessageAttachment(null);
         setShowMessageForm(false);
         fetchMessages();
         setError('');
@@ -478,6 +490,24 @@ const PatientPortal = () => {
                       required
                     />
                   </div>
+                  <div className="form-group">
+                    <label>Attach Image (Optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setMessageAttachment(e.target.files[0])}
+                    />
+                    {messageAttachment && (
+                      <div style={{marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px'}}>
+                        <p>Selected: {messageAttachment.name}</p>
+                        <img 
+                          src={URL.createObjectURL(messageAttachment)} 
+                          alt="Preview" 
+                          style={{height: '80px', width: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd'}}
+                        />
+                      </div>
+                    )}
+                  </div>
                   <button type="submit" className="btn btn-primary">Send Message</button>
                 </form>
               </div>
@@ -507,6 +537,16 @@ const PatientPortal = () => {
                         </div>
                         <div className="message-subject">{message.subject}</div>
                         <div className="message-content" dangerouslySetInnerHTML={{__html: message.content}}></div>
+                        {message.attachment_path && message.attachment_path !== 'null' && message.attachment_path.trim() !== '' && (
+                          <div style={{marginTop: '10px'}}>
+                            <img 
+                              src={`http://localhost:5000/uploads/${message.attachment_path}`} 
+                              alt="Message attachment" 
+                              style={{maxHeight: '200px', maxWidth: '300px', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer'}}
+                              onClick={() => window.open(`http://localhost:5000/uploads/${message.attachment_path}`, '_blank')}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

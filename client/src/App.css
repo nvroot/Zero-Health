@@ -526,16 +526,19 @@ html {
 
 .message-bubble {
   max-width: 70%;
+  min-width: 200px;
   padding: 16px 20px;
   border-radius: 20px;
   position: relative;
   word-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .message-bubble.sent {
   background: #007bff;
   color: white;
   border-bottom-right-radius: 6px;
+  min-width: 250px;
 }
 
 .message-bubble.received {
@@ -544,6 +547,7 @@ html {
   border: 1px solid #e2e8f0;
   border-bottom-left-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  min-width: 250px;
 }
 
 .message-header {

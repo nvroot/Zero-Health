@@ -350,26 +350,89 @@ Respond with JSON in this exact format:
       const queryResult = await pool.query(response.sql_query);
       
       if (response.expects_results && queryResult.rows.length > 0) {
-        // Format results for user
-        let resultsText = response.user_message + "\n\n**Results:**\n";
-        queryResult.rows.forEach((row, index) => {
-          resultsText += `**Record ${index + 1}:**\n`;
+        // Format results for user with better HTML formatting
+        let resultsText = response.user_message + "\n\n";
+        
+        if (queryResult.rows.length === 1) {
+          // Single result - show as a card
+          const row = queryResult.rows[0];
+          resultsText += `<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007bff;">`;
+          
+          // Show meaningful fields first
+          if (row.first_name && row.last_name) {
+            resultsText += `<h4 style="margin: 0 0 10px 0; color: #2c3e50;">👤 ${row.first_name} ${row.last_name}</h4>`;
+          } else if (row.medication_name) {
+            resultsText += `<h4 style="margin: 0 0 10px 0; color: #2c3e50;">💊 ${row.medication_name}</h4>`;
+          } else if (row.test_name) {
+            resultsText += `<h4 style="margin: 0 0 10px 0; color: #2c3e50;">🧪 ${row.test_name}</h4>`;
+          } else if (row.subject) {
+            resultsText += `<h4 style="margin: 0 0 10px 0; color: #2c3e50;">💬 ${row.subject}</h4>`;
+          }
+          
           Object.entries(row).forEach(([key, value]) => {
-            resultsText += `- ${key}: ${value}\n`;
+            if (value && !['id', 'first_name', 'last_name', 'medication_name', 'test_name', 'subject'].includes(key)) {
+              const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              resultsText += `<p style="margin: 5px 0;"><strong>${displayKey}:</strong> ${value}</p>`;
+            }
           });
-          resultsText += '\n';
-        });
+          resultsText += `</div>`;
+        } else {
+          // Multiple results - show as a list
+          resultsText += `<p><strong>Found ${queryResult.rows.length} results:</strong></p>`;
+          queryResult.rows.forEach((row, index) => {
+            resultsText += `<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 3px solid #28a745;">`;
+            
+            // Show primary identifier
+            if (row.first_name && row.last_name) {
+              resultsText += `<strong>👤 ${row.first_name} ${row.last_name}</strong>`;
+            } else if (row.medication_name) {
+              resultsText += `<strong>💊 ${row.medication_name}</strong>`;
+            } else if (row.test_name) {
+              resultsText += `<strong>🧪 ${row.test_name}</strong>`;
+            } else if (row.subject) {
+              resultsText += `<strong>💬 ${row.subject}</strong>`;
+            } else {
+              resultsText += `<strong>Record ${index + 1}</strong>`;
+            }
+            
+            // Show 2-3 most important fields
+            const importantFields = ['email', 'role', 'dosage', 'status', 'test_date', 'appointment_date', 'created_at'];
+            const shownFields = importantFields.filter(field => row[field]).slice(0, 3);
+            
+            if (shownFields.length > 0) {
+              resultsText += '<br>';
+              shownFields.forEach(field => {
+                const displayKey = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                resultsText += `<small style="color: #6c757d;">${displayKey}: ${row[field]}</small><br>`;
+              });
+            }
+            
+            resultsText += `</div>`;
+          });
+        }
+        
         return resultsText;
       } else if (response.sql_query.toLowerCase().startsWith('insert') || 
                  response.sql_query.toLowerCase().startsWith('update')) {
-        return response.user_message + ' ✅ Action completed successfully!';
+        return `<div style="background: #d1edff; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff; margin: 10px 0;">
+          <h4 style="margin: 0 0 5px 0; color: #004085;">✅ Success</h4>
+          <p style="margin: 0; color: #004085;">${response.user_message}</p>
+        </div>`;
       } else {
         return response.user_message + (queryResult.rows.length === 0 ? ' No results found.' : '');
       }
       
     } catch (sqlError) {
-      // Expose SQL errors - vulnerability for educational purposes
-      return `I encountered an error while processing your request:\n\n**SQL Error:** ${sqlError.message}\n**Query:** ${response.sql_query}\n\nPlease try rephrasing your request.`;
+      // Expose SQL errors - vulnerability for educational purposes with better formatting
+      return `<div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 10px 0;">
+        <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Query Error</h4>
+        <p style="margin: 5px 0;"><strong>Message:</strong> ${sqlError.message}</p>
+        <details style="margin-top: 10px;">
+          <summary style="cursor: pointer; color: #6c757d;">Technical Details</summary>
+          <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; margin-top: 5px; overflow-x: auto;">${response.sql_query}</pre>
+        </details>
+        <p style="margin: 10px 0 0 0; font-style: italic; color: #6c757d;">Please try rephrasing your request or contact support if this persists.</p>
+      </div>`;
     }
     
   } catch (error) {

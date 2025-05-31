@@ -43,9 +43,15 @@ const StaffDashboard = () => {
     specialization: '',
     license_number: ''
   });
+  const [newReply, setNewReply] = useState({
+    recipient_id: '',
+    subject: '',
+    content: ''
+  });
   const [showLabForm, setShowLabForm] = useState(false);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [showUserForm, setShowUserForm] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
 
   // Get JWT token from localStorage
   const getAuthToken = () => {
@@ -344,6 +350,37 @@ const StaffDashboard = () => {
     }
   };
 
+  const handleReplyMessage = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(newReply)
+      });
+      
+      if (response.ok) {
+        setNewReply({ recipient_id: '', subject: '', content: '' });
+        setReplyingTo(null);
+        fetchMessages();
+        setError('');
+      } else {
+        setError('Failed to send reply');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+    }
+  };
+
+  const startReply = (message) => {
+    setNewReply({
+      recipient_id: message.sender_id,
+      subject: message.subject.startsWith('Re: ') ? message.subject : `Re: ${message.subject}`,
+      content: ''
+    });
+    setReplyingTo(message.id);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     window.location.href = '/';
@@ -613,7 +650,8 @@ const StaffDashboard = () => {
                     <p><strong>Status:</strong> <span className={`status-badge status-${appointment.status}`}>
                       {appointment.status}
                     </span></p>
-                    <p><strong>Notes:</strong> {appointment.notes || appointment.reason}</p>
+                    {appointment.reason && <p><strong>Reason:</strong> {appointment.reason}</p>}
+                    {appointment.notes && <p><strong>Notes:</strong> {appointment.notes}</p>}
                   </div>
                 ))}
               </div>
@@ -668,6 +706,42 @@ const StaffDashboard = () => {
               <div className="section-header">
                 <h2>💬 Messages</h2>
               </div>
+              
+              {replyingTo && (
+                <div className="form-container" style={{marginBottom: '20px'}}>
+                  <h3>Reply to Message</h3>
+                  <form onSubmit={handleReplyMessage}>
+                    <div className="form-group">
+                      <label>Subject</label>
+                      <input
+                        type="text"
+                        value={newReply.subject}
+                        onChange={(e) => setNewReply({...newReply, subject: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Reply</label>
+                      <textarea
+                        value={newReply.content}
+                        onChange={(e) => setNewReply({...newReply, content: e.target.value})}
+                        placeholder="Type your reply here..."
+                        rows="4"
+                        required
+                      />
+                    </div>
+                    <div className="form-actions">
+                      <button type="button" onClick={() => setReplyingTo(null)} className="btn btn-secondary">
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-primary">
+                        Send Reply
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+              
               <div className="messages-container">
                 {messages.length === 0 ? (
                   <div style={{textAlign: 'center', padding: '40px', color: '#6c757d'}}>
@@ -689,6 +763,25 @@ const StaffDashboard = () => {
                         </div>
                         <div className="message-subject">{message.subject}</div>
                         <div className="message-content" dangerouslySetInnerHTML={{__html: message.content}}></div>
+                        {message.attachment_path && message.attachment_path !== 'null' && message.attachment_path.trim() !== '' && (
+                          <div style={{marginTop: '10px'}}>
+                            <img 
+                              src={`http://localhost:5000/uploads/${message.attachment_path}`} 
+                              alt="Message attachment" 
+                              style={{maxHeight: '200px', maxWidth: '300px', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer'}}
+                              onClick={() => window.open(`http://localhost:5000/uploads/${message.attachment_path}`, '_blank')}
+                            />
+                          </div>
+                        )}
+                        {!isSentByUser && userRole === 'doctor' && (
+                          <button 
+                            onClick={() => startReply(message)}
+                            className="btn btn-primary"
+                            style={{marginTop: '10px', fontSize: '12px', padding: '6px 12px'}}
+                          >
+                            Reply
+                          </button>
+                        )}
                       </div>
                     );
                   })

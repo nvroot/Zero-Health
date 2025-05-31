@@ -201,6 +201,7 @@ The application comes with pre-configured test accounts:
 - **Admin**: `admin@zerohealth.com` / `password123` (Admin User)
 - **Doctor**: `doctor@test.com` / `password123` (Dr. Kendrick Lawal) 
 - **Patient**: `patient@test.com` / `password123` (Samuel L Jackson)
+- **Patient 2**: `patient2@test.com` / `password123` (Alice Johnson)
 
 #### Additional Staff Accounts
 **Doctors with specializations:**
@@ -255,7 +256,21 @@ Each role automatically routes to their appropriate dashboard:
 - `PUT /api/admin/users/:id/role` - Update user role (admins only)
 - `GET /api/admin/statistics` - Get system statistics (admins only)
 
-### Debug (Deliberately Exposed)
+### Medical Reports & File Management
+- `POST /api/reports/generate` - Generate PDF medical reports (doctors/admins only)
+- `GET /api/files/:filename` - Download uploaded files
+- `GET /api/lab-results/:id` - Direct lab result access (IDOR vulnerability)
+
+### User Management & Profile
+- `PUT /api/users/profile` - Update user profile (mass assignment vulnerability)
+- `GET /api/users/:id` - Direct user access (IDOR vulnerability)
+
+### Search & Discovery
+- `GET /api/search` - Search functionality (reflected XSS vulnerability)
+
+### System Information
+- `GET /api/info` - System information and configuration (information disclosure)
+- `GET /api/debug/token` - Generate debug tokens
 - `GET /api/debug/connection` - Database connection info
 - `GET /api/health` - Application health status
 
@@ -297,13 +312,18 @@ Each role automatically routes to their appropriate dashboard:
 This application contains numerous deliberate security vulnerabilities for educational purposes:
 
 ### Web Security Issues
-- Weak password hashing (only 5 bcrypt rounds)
-- SQL injection vulnerabilities in multiple endpoints
-- Cross-site scripting (XSS) in messages and lab results
-- Insecure direct object references
-- Weak JWT secrets and configuration
-- Information disclosure through debug endpoints
-- No input validation or sanitization
+- **SQL Injection**: Multiple endpoints vulnerable including login, messages, and AI chatbot queries
+- **Command Injection**: PDF report generation using patient-controlled data in shell commands
+- **Cross-Site Scripting (XSS)**: Stored XSS in messages and lab results, reflected XSS in search
+- **Insecure Direct Object References (IDOR)**: Direct access to lab results and user profiles by ID
+- **Mass Assignment**: Profile update endpoint accepts any field modifications including role changes
+- **Directory Traversal**: File download endpoint vulnerable to path manipulation
+- **Information Disclosure**: System info endpoint exposes JWT secrets and credentials
+- **Weak Authentication**: JWT accepts unsigned tokens, debug token generation, no rate limiting
+- **File Upload Vulnerabilities**: Unrestricted file types allowed (only blocks .exe, .bat, .cmd)
+- **Excessive Data Exposure**: Doctors endpoint returns password hashes and sensitive data
+- **Weak Password Policies**: Minimum 3 characters, weak bcrypt rounds (5 instead of 12+)
+- **No Input Validation**: Direct user input flows into critical system functions
 
 ### AI-Specific Security Issues
 - **Prompt Injection Attacks**: Manipulate AI behavior through crafted messages
@@ -345,6 +365,33 @@ By studying and exploiting the vulnerabilities in this application, you can lear
 15. XSS prevention in modern web applications
 16. Secure styling and CSS practices
 17. Role-based UI security patterns
+
+## 🚀 Coming Soon
+
+We're continuously expanding Zero Health with new features and educational content:
+
+### 📱 Mobile App
+- **React Native application** with the same deliberate vulnerabilities
+- **Mobile-specific security issues**: Insecure storage, certificate pinning bypass, deep link vulnerabilities
+- **Cross-platform exploitation**: iOS and Android attack vectors
+- **Biometric authentication bypass** and mobile session management flaws
+
+### 🐳 Containerised Local LLM
+- **Fully offline AI experience** with no external API dependencies
+- **Pre-configured vulnerable LLM setup** using Docker containers
+- **Local model vulnerabilities**: Model extraction, prompt injection on local systems
+- **Zero-config deployment** - just `docker-compose up` and start learning
+- **Privacy-focused learning** - all AI interactions stay on your machine
+
+### 🔥 HARD MODE
+- **Advanced vulnerability scenarios** for experienced security researchers
+- **Multi-step attack chains** requiring complex exploitation techniques
+- **Modern attack vectors**: GraphQL injection, JWT algorithm confusion, OAuth2 flows
+- **Infrastructure vulnerabilities**: Container escapes, SSRF, deserialization attacks
+- **Advanced AI attacks**: Model poisoning, adversarial examples, multi-modal prompt injection
+- **Time-based and blind vulnerabilities** requiring patience and skill to discover
+
+*Want to contribute to any of these features? Check out our Contributing section below!*
 
 ## Contributing
 

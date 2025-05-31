@@ -2,6 +2,8 @@
 
 ⚠️ **WARNING: This is a deliberately vulnerable application for educational purposes only. Do not use in production or with real data.**
 
+![image](https://github.com/user-attachments/assets/36873934-d7d5-49b5-b730-d6e71b8c8325)
+
 ## Purpose
 
 Zero Health is a deliberately vulnerable healthcare portal designed to demonstrate common security vulnerabilities in web applications, now enhanced with an AI-powered chatbot system. It serves as an educational tool to help developers understand:

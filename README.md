@@ -201,7 +201,7 @@ POSTGRES_DB=zero_health
 
 ## License
 
-MIT License - Educational use only.
+MIT License
 
 ## Disclaimer
 

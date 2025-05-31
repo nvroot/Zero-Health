@@ -66,11 +66,14 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024 // 10MB limit
     },
     fileFilter: function (req, file, cb) {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
+        // Very weak file filtering - allows most dangerous file types
+        const blockedExtensions = ['.exe', '.bat', '.cmd']; // Only blocks obvious Windows executables
+        const fileExtension = path.extname(file.originalname).toLowerCase();
+        
+        if (blockedExtensions.includes(fileExtension)) {
+            cb(new Error('Executable files not allowed'), false);
         } else {
-            cb(new Error('Only image files are allowed!'), false);
+            cb(null, true); // Allow everything else including .php, .js, .html, .svg, etc.
         }
     }
 });
@@ -87,8 +90,19 @@ const verifyToken = (req, res, next) => {
     }
 
     try {
-        // Deliberately weak: No proper algorithm specification
-        const decoded = jwt.verify(token, JWT_SECRET);
+        // Deliberately weak: Accept unsigned tokens and multiple algorithms
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256', 'none'] });
+        } catch (verifyError) {
+            // Fallback to decode without verification for "debug" tokens
+            decoded = jwt.decode(token);
+            if (!decoded || !decoded.id) {
+                throw new Error('Invalid token structure');
+            }
+            console.log('Accepted unverified token for debugging:', decoded);
+        }
+        
         console.log('Token decoded successfully:', decoded);
         req.user = decoded;
         next();
@@ -250,6 +264,7 @@ app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
+        // No rate limiting - vulnerable to brute force attacks
         console.log('Login attempt:', { email, password: password ? '[REDACTED]' : 'undefined' });
 
         // SQL injection vulnerable query
@@ -392,11 +407,12 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
         const { doctor_id, appointment_date, reason } = req.body;
         const patient_id = req.user.id;
         
-        // SQL injection vulnerable query
+        // Use parameterized query to avoid SQL injection
         const result = await pool.query(
             `INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason) 
-             VALUES ('${patient_id}', '${doctor_id}', '${appointment_date}', '${reason}') 
-             RETURNING *`
+             VALUES ($1, $2, $3, $4) 
+             RETURNING *`,
+            [patient_id, doctor_id, appointment_date, reason]
         );
         
         res.status(201).json(result.rows[0]);
@@ -408,9 +424,11 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
 
 app.get('/api/doctors', verifyToken, async (req, res) => {
     try {
-        // SQL injection vulnerable query
+        // Excessive data exposure - returns sensitive fields like password hash, personal info
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email FROM users WHERE role = 'doctor'`
+            `SELECT id, first_name, last_name, email, password, phone, date_of_birth, address, 
+                    specialization, license_number, created_at 
+             FROM users WHERE role = 'doctor'`
         );
         res.json(result.rows);
     } catch (error) {
@@ -426,22 +444,25 @@ app.get('/api/lab-results', verifyToken, async (req, res) => {
         const userRole = req.user.role;
         
         let query;
-        let params = [userId];
+        let params = [];
         
         if (userRole === 'patient') {
+            // Patients can only see their own results
             query = `SELECT lr.*, 
                            d.first_name as doctor_first_name, d.last_name as doctor_last_name
                      FROM lab_results lr 
                      JOIN users d ON lr.doctor_id = d.id 
                      WHERE lr.patient_id = $1`;
-        } else if (userRole === 'doctor') {
+            params = [userId];
+        } else {
+            // Staff can see all lab results (less restrictive)
             query = `SELECT lr.*, 
-                           p.first_name as patient_first_name, p.last_name as patient_last_name
+                           p.first_name as patient_first_name, p.last_name as patient_last_name,
+                           d.first_name as doctor_first_name, d.last_name as doctor_last_name
                      FROM lab_results lr 
                      JOIN users p ON lr.patient_id = p.id 
-                     WHERE lr.doctor_id = $1`;
-        } else {
-            return res.status(403).json({ error: 'Access denied' });
+                     JOIN users d ON lr.doctor_id = d.id 
+                     ORDER BY lr.test_date DESC`;
         }
         
         const result = await pool.query(query, params);
@@ -462,17 +483,46 @@ app.post('/api/lab-results', verifyToken, upload.single('image'), async (req, re
         const doctor_id = req.user.id;
         const file_path = req.file ? req.file.filename : null;
         
-        // SQL injection vulnerable query
+        // Use parameterized query to avoid SQL injection
         const result = await pool.query(
             `INSERT INTO lab_results (patient_id, doctor_id, test_name, result, test_date, file_path) 
-             VALUES ('${patient_id}', '${doctor_id}', '${test_name}', '${result_data}', '${test_date}', '${file_path}') 
-             RETURNING *`
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING *`,
+            [patient_id, doctor_id, test_name, result_data, test_date, file_path]
         );
         
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Create lab result error:', error);
         res.status(500).json({ error: 'Failed to create lab result' });
+    }
+});
+
+// ===== VULNERABLE ENDPOINT - Direct lab result access (IDOR) =====
+app.get('/api/lab-results/:id', verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // IDOR vulnerability - no check if user can access this lab result
+        const result = await pool.query(
+            `SELECT lr.*, 
+                    p.first_name as patient_first_name, p.last_name as patient_last_name,
+                    d.first_name as doctor_first_name, d.last_name as doctor_last_name
+             FROM lab_results lr 
+             JOIN users p ON lr.patient_id = p.id 
+             JOIN users d ON lr.doctor_id = d.id 
+             WHERE lr.id = $1`,
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Lab result not found' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Get lab result error:', error);
+        res.status(500).json({ error: 'Failed to get lab result' });
     }
 });
 
@@ -526,11 +576,12 @@ app.post('/api/prescriptions', verifyToken, async (req, res) => {
         const { patient_id, medication_name, dosage, frequency, duration, instructions } = req.body;
         const doctor_id = req.user.id;
         
-        // SQL injection vulnerable query
+        // Use parameterized query to avoid SQL injection
         const result = await pool.query(
             `INSERT INTO prescriptions (patient_id, doctor_id, medication_name, dosage, frequency, duration, instructions) 
-             VALUES ('${patient_id}', '${doctor_id}', '${medication_name}', '${dosage}', '${frequency}', '${duration}', '${instructions}') 
-             RETURNING *`
+             VALUES ($1, $2, $3, $4, $5, $6, $7) 
+             RETURNING *`,
+            [patient_id, doctor_id, medication_name, dosage, frequency, duration, instructions]
         );
         
         res.status(201).json(result.rows[0]);
@@ -548,11 +599,12 @@ app.put('/api/prescriptions/:id/collect', verifyToken, async (req, res) => {
         
         const { id } = req.params;
         
-        // SQL injection vulnerable query
+        // Use parameterized query
         const result = await pool.query(
             `UPDATE prescriptions SET status = 'collected', collected_date = CURRENT_DATE 
-             WHERE id = '${id}' 
-             RETURNING *`
+             WHERE id = $1 
+             RETURNING *`,
+            [id]
         );
         
         res.json(result.rows[0]);
@@ -710,6 +762,64 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'vulnerable' });
 });
 
+/**
+ * @swagger
+ * /api/debug/token:
+ *   get:
+ *     tags: [Debug]
+ *     summary: Generate debug token (Development only)
+ *     description: Generate a development token for testing purposes
+ *     parameters:
+ *       - name: role
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [patient, doctor, pharmacist, admin]
+ *         description: Role for the debug token
+ *       - name: id
+ *         in: query
+ *         schema:
+ *           type: integer
+ *         description: User ID for the debug token
+ *     responses:
+ *       200:
+ *         description: Debug token generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 debug_token:
+ *                   type: string
+ *                 warning:
+ *                   type: string
+ */
+app.get('/api/debug/token', (req, res) => {
+    const { role = 'patient', id = '1' } = req.query;
+    
+    // Generate weak debug token with no algorithm specification
+    const debugToken = jwt.sign(
+        { 
+            id: parseInt(id), 
+            email: `debug@${role}.com`, 
+            role: role,
+            debug: true
+        },
+        'debug-key',  // Weak secret
+        { 
+            expiresIn: '1h',
+            algorithm: 'none'  // No signature verification
+        }
+    );
+    
+    res.json({
+        debug_token: debugToken,
+        role: role,
+        id: id,
+        warning: 'Debug token - not for production use'
+    });
+});
+
 // =======================
 // ADMIN ENDPOINTS - USER MANAGEMENT & STATISTICS
 // =======================
@@ -764,135 +874,83 @@ app.get('/api/admin/users', verifyToken, async (req, res) => {
     }
 });
 
-// Create new user (admin only)
-app.post('/api/admin/users', verifyToken, async (req, res) => {
+// ===== USER PROFILE UPDATE - Mass Assignment vulnerability =====
+app.put('/api/users/profile', verifyToken, async (req, res) => {
     try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Admin access required' });
+        const userId = req.user.id;
+        
+        // Mass assignment vulnerability - updates any field provided in request body
+        const allowedFields = Object.keys(req.body);
+        const updateValues = Object.values(req.body);
+        
+        if (allowedFields.length === 0) {
+            return res.status(400).json({ error: 'No fields to update' });
         }
         
-        const { email, password, role, first_name, last_name, phone, date_of_birth, gender, address, specialization, license_number } = req.body;
+        // Build dynamic query - dangerous but educational
+        const setClause = allowedFields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+        const query = `UPDATE users SET ${setClause} WHERE id = $1 RETURNING id, email, role, first_name, last_name`;
         
-        // Weak password hashing (using only 5 rounds)
-        const hashedPassword = await bcrypt.hash(password, 5);
+        console.log('Profile update query:', query);
+        console.log('Update values:', updateValues);
         
-        // SQL injection vulnerable query
-        const result = await pool.query(
-            `INSERT INTO users (email, password, role, first_name, last_name, phone, date_of_birth, gender, address, specialization, license_number) 
-             VALUES ('${email}', '${hashedPassword}', '${role}', '${first_name}', '${last_name}', '${phone}', '${date_of_birth}', '${gender}', '${address}', '${specialization}', '${license_number}') 
-             RETURNING id, email, role, first_name, last_name, phone, specialization, license_number, created_at`
-        );
-        
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Create user error:', error);
-        res.status(500).json({ error: 'Failed to create user' });
-    }
-});
-
-// Update user role (admin only)
-app.put('/api/admin/users/:id/role', verifyToken, async (req, res) => {
-    try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Admin access required' });
-        }
-        
-        const { id } = req.params;
-        const { role } = req.body;
-        
-        // SQL injection vulnerable query
-        const result = await pool.query(
-            `UPDATE users SET role = '${role}' WHERE id = '${id}' 
-             RETURNING id, email, role, first_name, last_name`
-        );
-        
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Update user role error:', error);
-        res.status(500).json({ error: 'Failed to update user role' });
-    }
-});
-
-// Delete user (admin only)
-app.delete('/api/admin/users/:id', verifyToken, async (req, res) => {
-    try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Admin access required' });
-        }
-        
-        const { id } = req.params;
-        
-        // Prevent admin from deleting themselves
-        if (parseInt(id) === req.user.id) {
-            return res.status(400).json({ error: 'Cannot delete your own account' });
-        }
-        
-        // SQL injection vulnerable query
-        const result = await pool.query(`DELETE FROM users WHERE id = '${id}' RETURNING *`);
+        const result = await pool.query(query, [userId, ...updateValues]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        res.json({ message: 'User deleted successfully' });
+        res.json(result.rows[0]);
     } catch (error) {
-        console.error('Delete user error:', error);
-        res.status(500).json({ error: 'Failed to delete user' });
+        console.error('Profile update error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
     }
 });
 
-// Get system statistics (admin only)
-app.get('/api/admin/statistics', verifyToken, async (req, res) => {
+// ===== ADMIN SYSTEM MONITORING - Command Injection vulnerability =====
+app.post('/api/admin/system', verifyToken, async (req, res) => {
     try {
         if (req.user.role !== 'admin') {
             return res.status(403).json({ error: 'Admin access required' });
         }
         
-        // SQL injection vulnerable queries
-        const [userStats, appointmentStats, prescriptionStats, messageStats] = await Promise.all([
-            pool.query(`SELECT role, COUNT(*) as count FROM users GROUP BY role`),
-            pool.query(`SELECT status, COUNT(*) as count FROM appointments GROUP BY status`),
-            pool.query(`SELECT status, COUNT(*) as count FROM prescriptions GROUP BY status`),
-            pool.query(`SELECT COUNT(*) as total_messages FROM messages`)
-        ]);
+        const { action, target } = req.body;
         
-        const totalUsers = await pool.query(`SELECT COUNT(*) as total FROM users`);
-        const totalAppointments = await pool.query(`SELECT COUNT(*) as total FROM appointments`);
-        const totalPrescriptions = await pool.query(`SELECT COUNT(*) as total FROM prescriptions`);
-        const totalLabResults = await pool.query(`SELECT COUNT(*) as total FROM lab_results`);
+        // Command injection vulnerability - no input sanitization
+        let command;
+        switch (action) {
+            case 'ping':
+                command = `ping -c 3 ${target}`;
+                break;
+            case 'disk':
+                command = `df -h ${target || '/'}`;
+                break;
+            case 'process':
+                command = `ps aux | grep ${target || 'node'}`;
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid action' });
+        }
         
-        res.json({
-            users: {
-                total: parseInt(totalUsers.rows[0].total),
-                by_role: userStats.rows.reduce((acc, row) => {
-                    acc[row.role] = parseInt(row.count);
-                    return acc;
-                }, {})
-            },
-            appointments: {
-                total: parseInt(totalAppointments.rows[0].total),
-                by_status: appointmentStats.rows.reduce((acc, row) => {
-                    acc[row.status] = parseInt(row.count);
-                    return acc;
-                }, {})
-            },
-            prescriptions: {
-                total: parseInt(totalPrescriptions.rows[0].total),
-                by_status: prescriptionStats.rows.reduce((acc, row) => {
-                    acc[row.status || 'pending'] = parseInt(row.count);
-                    return acc;
-                }, {})
-            },
-            lab_results: {
-                total: parseInt(totalLabResults.rows[0].total)
-            },
-            messages: {
-                total: parseInt(messageStats.rows[0].total_messages)
+        console.log('Admin executing system command:', command);
+        
+        const { exec } = require('child_process');
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                res.status(500).json({ error: error.message, command: command });
+            } else {
+                res.json({ 
+                    output: stdout,
+                    error: stderr,
+                    command: command,
+                    timestamp: new Date().toISOString()
+                });
             }
         });
+        
     } catch (error) {
-        console.error('Get statistics error:', error);
-        res.status(500).json({ error: 'Failed to get statistics' });
+        console.error('System command error:', error);
+        res.status(500).json({ error: 'System command failed' });
     }
 });
 
@@ -944,4 +1002,55 @@ startServer().catch(error => {
 });
 
 // Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ===== FILE DOWNLOAD ENDPOINT - Directory Traversal vulnerability =====
+app.get('/api/files/:filename', verifyToken, async (req, res) => {
+    try {
+        const { filename } = req.params;
+        
+        // Directory traversal vulnerability - direct concatenation allows ../../../etc/passwd
+        const filePath = __dirname + '/uploads/' + filename;
+        
+        console.log('File download request:', filename);
+        console.log('Resolved path:', filePath);
+        
+        // Check if file exists
+        if (fs.existsSync(filePath)) {
+            res.download(filePath);
+        } else {
+            res.status(404).json({ error: 'File not found' });
+        }
+    } catch (error) {
+        console.error('File download error:', error);
+        res.status(500).json({ error: 'Failed to download file' });
+    }
+});
+
+// ===== SEARCH ENDPOINT - Reflected XSS vulnerability =====
+
+// ===== SYSTEM INFO ENDPOINT - Information Disclosure =====
+app.get('/api/info', (req, res) => {
+    // No authentication required - exposes system information
+    res.json({
+        application: 'Zero Health',
+        version: '2.1.3',
+        node_version: process.version,
+        environment: process.env.NODE_ENV || 'development',
+        platform: process.platform,
+        uptime: process.uptime(),
+        memory_usage: process.memoryUsage(),
+        database: {
+            host: process.env.POSTGRES_HOST || 'db',
+            port: process.env.POSTGRES_PORT || 5432,
+            database: process.env.POSTGRES_DB || 'zero_health'
+        },
+        jwt_secret: JWT_SECRET,  // Exposed secret!
+        admin_credentials: {
+            email: 'admin@test.com',
+            password: 'password123'
+        },
+        vulnerability_count: '∞',
+        last_updated: '2024-12-15'
+    });
+});

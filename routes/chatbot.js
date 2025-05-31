@@ -218,21 +218,45 @@ ${databaseSchema}
 CURRENT USER: ID=${userId}, Role=${userRole}
 ACTION CATEGORY: ${intent.action_category}
 
+STAFF ROLE PERMISSIONS:
+- DOCTORS: Can access ALL patient data (appointments, lab results, prescriptions, messages, medical records)
+- PHARMACISTS: Can access prescriptions and medication-related data only
+- ADMINS: Can access all system data including user management
+- PATIENTS: Can only access their own data (patient_id=${userId} or user_id=${userId})
+
+STAFF-SPECIFIC QUERIES EXAMPLES:
+
+FOR DOCTORS (role='doctor'):
+- "Show patients for Dr. Smith" → SELECT * FROM users WHERE role='patient'
+- "Show my appointments" → SELECT a.*, p.first_name as patient_name, p.last_name as patient_lastname FROM appointments a JOIN users p ON a.patient_id = p.id WHERE a.doctor_id=${userId}
+- "Find patient John Doe" → SELECT * FROM users WHERE role='patient' AND (first_name ILIKE '%john%' OR last_name ILIKE '%doe%')
+- "Show lab results for patient ID 5" → SELECT lr.*, p.first_name, p.last_name FROM lab_results lr JOIN users p ON lr.patient_id = p.id WHERE lr.patient_id = 5
+- "Show all pending prescriptions" → SELECT pr.*, p.first_name, p.last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id WHERE pr.status = 'pending'
+
+FOR PHARMACISTS (role='pharmacist'):
+- "Show pending prescriptions" → SELECT pr.*, p.first_name, p.last_name, d.first_name as doctor_first_name, d.last_name as doctor_last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id JOIN users d ON pr.doctor_id = d.id WHERE pr.status IN ('pending', 'prescribed')
+- "Find prescriptions for medication Lisinopril" → SELECT pr.*, p.first_name, p.last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id WHERE pr.medication_name ILIKE '%lisinopril%'
+
+FOR ADMINS (role='admin'):
+- "Show all users" → SELECT id, first_name, last_name, email, role, created_at FROM users ORDER BY created_at DESC
+- "Show system statistics" → SELECT COUNT(*) as total_users FROM users; SELECT COUNT(*) as total_appointments FROM appointments; SELECT COUNT(*) as total_prescriptions FROM prescriptions
+- "Find doctors" → SELECT * FROM users WHERE role = 'doctor'
+
 Recent conversation:
 ${chatHistory.slice(-3).map(chat => `User: ${chat.message}\nBot: ${chat.response}`).join('\n\n')}
 
 User's request: "${userMessage}"
 
-Generate a SQL query to fulfill this request and provide a user-friendly response message.
+Generate a SQL query to fulfill this request based on the user's role permissions.
 
 IMPORTANT RULES:
 - For patients (role='patient'): Only access data where patient_id=${userId} or user_id=${userId}
-- For doctors: Access data for their patients
-- Remember: ALL users are in the 'users' table with different 'role' values
-- To find doctors: SELECT * FROM users WHERE role='doctor'
-- To find patients: SELECT * FROM users WHERE role='patient'
-- Use proper JOINs when needed (e.g., JOIN users ON appointments.doctor_id = users.id)
-- For INSERT operations, use appropriate values and reference user IDs correctly
+- For doctors (role='doctor'): Can access all patient data - use JOINs to get patient names
+- For pharmacists (role='pharmacist'): Only prescription-related queries
+- For admins (role='admin'): Can access all system data
+- Use proper JOINs to get meaningful data (e.g., patient names with their records)
+- When searching by name, use ILIKE with % wildcards for case-insensitive partial matching
+- Always include meaningful fields and readable column names
 
 Respond with JSON in this exact format:
 {

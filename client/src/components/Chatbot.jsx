@@ -1,13 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Chatbot.css';
 
-const Chatbot = () => {
+const Chatbot = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Get user role from props or localStorage as fallback
+  const getUserRole = () => {
+    if (user && user.role) {
+      return user.role;
+    }
+    
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      return (parsed.user && parsed.user.role) || parsed.role || 'patient';
+    }
+    
+    return 'patient';
+  };
+
+  const userRole = getUserRole();
+
+  // Get role-specific greeting message
+  const getRoleSpecificGreeting = () => {
+    switch (userRole) {
+      case 'doctor':
+        return "Hello Doctor! I'm your Zero Health AI assistant. I can help you access patient records, view appointments, check lab results, and search for patient information. What would you like to do?";
+      case 'pharmacist':
+        return "Hello! I'm your Zero Health AI assistant. I can help you manage prescriptions, search for medications, and handle prescription collections. How can I assist you today?";
+      case 'admin':
+        return "Hello Administrator! I'm your Zero Health AI assistant. I can help you access system statistics, manage users, and view system-wide information. What would you like to do?";
+      default: // patient
+        return "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?";
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,9 +65,10 @@ const Chatbot = () => {
         if (!token) {
           console.log('❌ No token found, showing initial greeting');
           // If no token, show initial greeting
+          const greeting = getRoleSpecificGreeting();
           setMessages([{
             id: 1,
-            text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+            text: greeting,
             sender: 'bot',
             timestamp: new Date()
           }]);
@@ -81,9 +113,10 @@ const Chatbot = () => {
           } else {
             console.log('📭 No chat history found, showing initial greeting');
             // No chat history, show initial greeting
+            const greeting = getRoleSpecificGreeting();
             setMessages([{
               id: 'initial-greeting',
-              text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+              text: greeting,
               sender: 'bot',
               timestamp: new Date()
             }]);
@@ -93,9 +126,10 @@ const Chatbot = () => {
           const errorText = await response.text();
           console.log('❌ Error response body:', errorText);
           // Error loading history, show initial greeting
+          const greeting = getRoleSpecificGreeting();
           setMessages([{
             id: 'error-greeting',
-            text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+            text: greeting,
             sender: 'bot',
             timestamp: new Date()
           }]);
@@ -103,9 +137,10 @@ const Chatbot = () => {
       } catch (error) {
         console.error('💥 Failed to load chat history:', error);
         // Error loading history, show initial greeting
+        const greeting = getRoleSpecificGreeting();
         setMessages([{
           id: 'fallback-greeting',
-          text: "Hello! I'm your Zero Health AI assistant. I can help you with health questions, appointments, medical records, and more. How can I assist you today?",
+          text: greeting,
           sender: 'bot',
           timestamp: new Date()
         }]);
@@ -267,7 +302,7 @@ const Chatbot = () => {
           <div className="chat-header">
             <div className="chat-title">
               <span className="chat-icon">🤖</span>
-              Zero Health AI Assistant
+              {userRole === 'patient' ? 'Zero Health AI Assistant' : `Zero Health AI - ${userRole.charAt(0).toUpperCase() + userRole.slice(1)} Portal`}
             </div>
             <div className="chat-status">
               <span className="status-indicator"></span>
@@ -319,24 +354,103 @@ const Chatbot = () => {
 
           <div className="chat-input-container">
             <div className="quick-suggestions">
-              <button 
-                onClick={() => setInputMessage('What services does Zero Health provide?')}
-                className="suggestion-btn"
-              >
-                Our Services
-              </button>
-              <button 
-                onClick={() => setInputMessage('Help me book an appointment')}
-                className="suggestion-btn"
-              >
-                Book Appointment
-              </button>
-              <button 
-                onClick={() => setInputMessage('Show my medical records')}
-                className="suggestion-btn"
-              >
-                Medical Records
-              </button>
+              {userRole === 'patient' && (
+                <>
+                  <button 
+                    onClick={() => setInputMessage('What services does Zero Health provide?')}
+                    className="suggestion-btn"
+                  >
+                    Our Services
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Help me book an appointment')}
+                    className="suggestion-btn"
+                  >
+                    Book Appointment
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Show my medical records')}
+                    className="suggestion-btn"
+                  >
+                    My Medical Records
+                  </button>
+                </>
+              )}
+              
+              {userRole === 'doctor' && (
+                <>
+                  <button 
+                    onClick={() => setInputMessage('Show my appointments today')}
+                    className="suggestion-btn"
+                  >
+                    My Appointments
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Find patient John Doe')}
+                    className="suggestion-btn"
+                  >
+                    Find Patient
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Show pending lab results')}
+                    className="suggestion-btn"
+                  >
+                    Lab Results
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Show all my patients')}
+                    className="suggestion-btn"
+                  >
+                    My Patients
+                  </button>
+                </>
+              )}
+              
+              {userRole === 'pharmacist' && (
+                <>
+                  <button 
+                    onClick={() => setInputMessage('Show pending prescriptions')}
+                    className="suggestion-btn"
+                  >
+                    Pending Prescriptions
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Find prescriptions for Lisinopril')}
+                    className="suggestion-btn"
+                  >
+                    Search Medication
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Show collected prescriptions today')}
+                    className="suggestion-btn"
+                  >
+                    Today's Collections
+                  </button>
+                </>
+              )}
+              
+              {userRole === 'admin' && (
+                <>
+                  <button 
+                    onClick={() => setInputMessage('Show system statistics')}
+                    className="suggestion-btn"
+                  >
+                    System Stats
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Show all users')}
+                    className="suggestion-btn"
+                  >
+                    All Users
+                  </button>
+                  <button 
+                    onClick={() => setInputMessage('Find doctors')}
+                    className="suggestion-btn"
+                  >
+                    Find Doctors
+                  </button>
+                </>
+              )}
             </div>
             
             <div className="chat-input">

@@ -1062,7 +1062,7 @@ const StaffDashboard = () => {
         </div>
       )}
 
-      <Chatbot />
+      <Chatbot user={user} />
     </div>
   );
 };

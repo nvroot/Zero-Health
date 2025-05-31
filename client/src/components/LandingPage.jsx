@@ -34,17 +34,17 @@ const LandingPage = () => {
         <div className="hero-container">
           <div className="hero-content">
             <div className="hero-badge">
-              <span>🏥 Advanced Healthcare Technology</span>
+              <span>🔥 Intentionally Vulnerable</span>
             </div>
             <h1 className="hero-title">
-              Welcome to <span className="gradient-text">Zero Health</span> – Your Comprehensive Healthcare Portal
+              Welcome to <span className="gradient-text">Zero Health</span> – Your One-Stop Shop for Leaking Medical Data!
             </h1>
             <p className="hero-subtitle">
-              Streamlined healthcare management with AI-powered assistance. Access your medical records, book appointments, and connect with healthcare professionals.
+              Zero trust. Zero security. Total exposure. The future of healthcare has never been so wonderfully broken.
             </p>
             <div className="hero-cta">
               <button onClick={handleGetStarted} className="btn btn-primary btn-large">
-                <span>Get Started Today</span>
+                <span>Sign Up Insecurely</span>
                 <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -52,32 +52,32 @@ const LandingPage = () => {
             </div>
             <div className="hero-stats">
               <div className="stat-card">
-                <div className="stat-number">24/7</div>
-                <div className="stat-label">Healthcare Access</div>
+                <div className="stat-number">0%</div>
+                <div className="stat-label">Security Measures</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">100+</div>
-                <div className="stat-label">Healthcare Providers</div>
+                <div className="stat-number">100%</div>
+                <div className="stat-label">Data Exposure</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">50K+</div>
-                <div className="stat-label">Active Patients</div>
+                <div className="stat-number">∞</div>
+                <div className="stat-label">Vulnerabilities</div>
               </div>
             </div>
           </div>
           <div className="hero-visual">
             <div className="floating-cards">
               <div className="floating-card card-1">
-                <div className="card-icon">🏥</div>
-                <div className="card-text">Medical Records</div>
+                <div className="card-icon">🔓</div>
+                <div className="card-text">Plaintext Data</div>
               </div>
               <div className="floating-card card-2">
-                <div className="card-icon">🤖</div>
-                <div className="card-text">AI Assistant</div>
+                <div className="card-icon">⚠️</div>
+                <div className="card-text">XSS Ready</div>
               </div>
               <div className="floating-card card-3">
-                <div className="card-icon">📅</div>
-                <div className="card-text">Appointments</div>
+                <div className="card-icon">📡</div>
+                <div className="card-text">No HTTPS</div>
               </div>
             </div>
             <div className="hero-gradient-orb"></div>
@@ -90,50 +90,50 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="section-header">
             <h2 className="section-title">Why Choose Zero Health?</h2>
-            <p className="section-subtitle">Advanced healthcare technology designed for modern patient care</p>
+            <p className="section-subtitle">Experience the most beautifully broken healthcare platform ever created</p>
           </div>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon info">🔐</div>
-                <h3>Secure Authentication</h3>
+                <div className="feature-icon danger">🔓</div>
+                <h3>Zero Authentication Friction</h3>
               </div>
-              <p>Advanced security measures protect your medical information with industry-standard authentication protocols.</p>
+              <p>We skip identity verification, so anyone can pretend to be you! Healthcare access has never been easier.</p>
             </div>
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon success">🏥</div>
-                <h3>Complete Medical Records</h3>
+                <div className="feature-icon warning">🕵️‍♂️</div>
+                <h3>Open Medical Records</h3>
               </div>
-              <p>Access your complete medical history, lab results, and prescriptions all in one secure location.</p>
+              <p>Tired of logging in? Just bypass the JWT token!</p>
             </div>
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon info">🤖</div>
-                <h3>AI Health Assistant</h3>
+                <div className="feature-icon danger">⚠️</div>
+                <h3>XSS as a Service</h3>
               </div>
-              <p>Get instant answers to health questions and guidance from our advanced AI medical assistant.</p>
+              <p>Inject your personality—and scripts—into every conversation. We love user input!</p>
             </div>
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon success">📅</div>
-                <h3>Easy Appointment Booking</h3>
+                <div className="feature-icon info">📂</div>
+                <h3>File Upload Freedom</h3>
               </div>
-              <p>Schedule appointments with healthcare providers quickly and easily through our intuitive interface.</p>
+              <p>No pesky MIME checks. Upload whatever you want! Executables welcome in our medical records system.</p>
             </div>
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon warning">💊</div>
-                <h3>Prescription Management</h3>
+                <div className="feature-icon warning">📡</div>
+                <h3>No HTTPS Needed</h3>
               </div>
-              <p>Track your medications, refill prescriptions, and receive important medication reminders.</p>
+              <p>We believe in open communication. Very open. Your data travels the internet like it's 1995!</p>
             </div>
             <div className="feature-card">
               <div className="feature-header">
-                <div className="feature-icon info">📱</div>
-                <h3>Mobile Friendly</h3>
+                <div className="feature-icon danger">🔐</div>
+                <h3>Security Promise</h3>
               </div>
-              <p>Access your healthcare data anywhere, anytime with our responsive design and mobile optimization.</p>
+              <p>We store your data in plaintext, just like Grandma used to. Zero encryption, zero worries, infinite possibilities!</p>
             </div>
           </div>
         </div>
@@ -144,45 +144,45 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="section-header">
             <h2 className="section-title">What Our Users Say</h2>
-            <p className="section-subtitle">Real feedback from our healthcare community</p>
+            <p className="section-subtitle">Real feedback from our security-conscious community</p>
           </div>
           <div className="testimonials-grid">
             <div className="testimonial-card">
               <div className="testimonial-content">
                 <div className="quote-icon">💬</div>
-                <p>"Zero Health has transformed how I manage my healthcare. The AI assistant is incredibly helpful for health questions!"</p>
+                <p>"I accessed my neighbor's health history in two clicks. The UI is so intuitive for medical voyeurism!"</p>
               </div>
               <div className="testimonial-author">
-                <div className="author-avatar">S</div>
+                <div className="author-avatar">K</div>
                 <div className="author-info">
-                  <div className="author-name">Sarah M.</div>
-                  <div className="author-role">Patient</div>
+                  <div className="author-name">Karen M.</div>
+                  <div className="author-role">Aspiring Cybercriminal</div>
                 </div>
               </div>
             </div>
             <div className="testimonial-card">
               <div className="testimonial-content">
-                <div className="quote-icon">🏥</div>
-                <p>"As a healthcare provider, Zero Health streamlines my workflow. Managing patient records and appointments has never been easier."</p>
+                <div className="quote-icon">🔍</div>
+                <p>"Zero Health is the future of bad software. I've never seen such beautiful vulnerabilities in healthcare!"</p>
               </div>
               <div className="testimonial-author">
                 <div className="author-avatar">D</div>
                 <div className="author-info">
-                  <div className="author-name">Dr. Johnson</div>
-                  <div className="author-role">Family Physician</div>
+                  <div className="author-name">Dr. Exploit</div>
+                  <div className="author-role">Ethical Hacker</div>
                 </div>
               </div>
             </div>
             <div className="testimonial-card">
               <div className="testimonial-content">
-                <div className="quote-icon">💊</div>
-                <p>"The prescription management system is fantastic. I can track all my medications and get refill reminders automatically."</p>
+                <div className="quote-icon">💥</div>
+                <p>"I sent my doctor a meme through the chat. The entire site broke. 10/10 would recommend!"</p>
               </div>
               <div className="testimonial-author">
-                <div className="author-avatar">M</div>
+                <div className="author-avatar">3</div>
                 <div className="author-info">
-                  <div className="author-name">Mike R.</div>
-                  <div className="author-role">Chronic Care Patient</div>
+                  <div className="author-name">Patient #314</div>
+                  <div className="author-role">XSS Enthusiast</div>
                 </div>
               </div>
             </div>

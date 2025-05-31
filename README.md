@@ -14,7 +14,7 @@ Zero Health is a deliberately vulnerable healthcare portal designed to demonstra
 
 ## Application Features
 
-### 🤖 Role-Based AI Chatbot System (ENHANCED)
+### 🤖 Role-Based AI Chatbot System
 - **LLM Integration**: Powered by any OpenAI-compatible provider (OpenAI, Groq, LM Studio, Ollama, etc.)
 - **Flexible API Support**: Simply provide your API key and endpoint - no vendor lock-in
 - **Role-Based Functionality**: Different capabilities for patients, doctors, pharmacists, and admins
@@ -44,7 +44,7 @@ Zero Health is a deliberately vulnerable healthcare portal designed to demonstra
 - 💬 **Messaging**: Send messages to healthcare providers (vulnerable to XSS)
 - 🤖 **AI Assistant**: Role-specific chat with health questions and portal assistance
 
-### Staff Dashboard (MODERNIZED)
+### Staff Dashboard
 - **Modern UI**: Professional design with Zero Health color palette and gradients
 - **Role-Based Access**: Automatic routing and different functionality per role
 - **Enhanced Chatbot**: Staff-specific quick suggestions and capabilities
@@ -63,18 +63,11 @@ Zero Health is a deliberately vulnerable healthcare portal designed to demonstra
   - Search medications and patient records
   - AI-assisted prescription management
 
-- 👨‍💼 **Admin Features** (NEW):
+- 👨‍💼 **Admin Features**:
   - Complete user management system
   - System statistics and analytics
   - Role-based user creation and editing
   - AI-powered system insights
-
-### Modern UI & Branding (NEW)
-- **Zero Health Brand Identity**: Consistent color palette across all components
-- **Professional Design**: Modern gradients, glassmorphism effects, and responsive layouts
-- **CSS Custom Properties**: Reusable color system for maintainability
-- **Enhanced User Experience**: Smooth animations, hover effects, and intuitive navigation
-- **Landing Page**: Satirical vulnerability-themed marketing with modern design
 
 ### Role-Based Access Control
 - Automatic dashboard routing based on user role (patient, doctor, pharmacist, admin)
@@ -98,15 +91,7 @@ User Message → Role Detection → Intent Classifier (LLM) → Action Handler (
 
 - **Role-Based Prompts**: Different AI behavior based on user role (patient/staff)
 - **Intent Classification**: Distinguishes between conversation and action requests
-- **Schema-Aware**: AI has full database schema knowledge from init.sql
 - **Permission-Based**: Role-specific data access and query generation
-- **Educational Vulnerabilities**: Maintains SQL injection and prompt injection risks
-
-### UI/UX Architecture
-- **CSS Custom Properties**: Zero Health brand color system
-- **Component-Based Design**: Reusable UI components with consistent styling
-- **Responsive Design**: Mobile-first approach with modern layouts
-- **Role-Specific Interfaces**: Different quick suggestions and greetings per role
 
 ## Security Vulnerabilities (Deliberately Vulnerable)
 
@@ -122,7 +107,7 @@ User Message → Role Detection → Intent Classifier (LLM) → Action Handler (
 - 🔐 Weak encryption
 - 📝 Insecure deserialization
 
-### AI/LLM Specific Vulnerabilities (ENHANCED)
+### AI/LLM Specific Vulnerabilities
 - 🤖 **Prompt Injection**: AI can be manipulated through crafted prompts
 - 🗄️ **SQL Injection via AI**: LLM generates vulnerable SQL queries
 - 📊 **Information Disclosure**: AI exposes database schema and internal information
@@ -191,13 +176,7 @@ export OPENAI_BASE_URL="https://your-provider-endpoint/v1"
 docker-compose up --build
 ```
 
-4. **Automatic Sample Data Initialization**:
-   - Sample data is automatically initialized on first startup
-   - No manual steps required - users, medical records, and chat history are added automatically
-   - Safe to restart containers - existing data is preserved
-   - SVG medical images are automatically generated
-
-5. Access the application:
+4. Access the application:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **AI Chatbot**: Available as floating widget on all pages with role-specific functionality
@@ -238,20 +217,20 @@ Reset the entire database and get fresh sample data:
 The application comes with pre-configured test accounts:
 
 #### Primary Test Accounts
-- **Admin**: `admin@zerohealth.com` / `password123`
-- **Doctor**: `doctor@test.com` / `password123`
-- **Patient**: `patient@test.com` / `password123`
+- **Admin**: `admin@zerohealth.com` / `password123` (Admin User)
+- **Doctor**: `doctor@test.com` / `password123` (Dr. Kendrick Lawal) 
+- **Patient**: `patient@test.com` / `password123` (Samuel L Jackson)
 
 #### Additional Staff Accounts
 **Doctors with specializations:**
-- **Dr. Michael Smith**: `dr.smith@zerohealth.com` / `password123`
-- **Dr. Emily Brown**: `dr.brown@zerohealth.com` / `password123`
-- **Dr. James Davis**: `dr.davis@zerohealth.com` / `password123`
-- **Dr. Lisa Wilson**: `dr.wilson@zerohealth.com` / `password123`
+- **Dr. Marshall D. Teach**: `dr.teach@zerohealth.com` / `password123`
+- **Dr. Erwin Smith**: `dr.smith@zerohealth.com` / `password123`
+- **Dr. Tinu Buhari**: `dr.buhari@zerohealth.com` / `password123`
+- **Dr. Acule Mihawk**: `dr.mihawk@zerohealth.com` / `password123`
 
 **Pharmacist accounts:**
-- **Sarah Johnson**: `pharmacist@zerohealth.com` / `password123`
-- **Mark Thompson**: `pharmacist2@zerohealth.com` / `password123`
+- **Ugo C Shege**: `ugocshege@zerohealth.com` / `password123`
+- **Pablo Escrowbar**: `escrowbar@zerohealth.com` / `password123`
 
 ### Role-Based Dashboard Access
 

@@ -5,6 +5,9 @@ const morgan = require('morgan');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 
 const app = express();
 
@@ -38,6 +41,39 @@ const pool = new Pool({
 
 // The sample data script will handle all database initialization
 // No need for duplicate schema creation here
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        // Create unique filename with timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept only image files
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed!'), false);
+        }
+    }
+});
 
 // Deliberately weak JWT verification middleware
 const verifyToken = (req, res, next) => {
@@ -321,15 +357,20 @@ app.get('/api/lab-results', verifyToken, async (req, res) => {
     }
 });
 
-app.post('/api/lab-results', verifyToken, async (req, res) => {
+app.post('/api/lab-results', verifyToken, upload.single('image'), async (req, res) => {
     try {
+        if (req.user.role !== 'doctor') {
+            return res.status(403).json({ error: 'Doctor access required' });
+        }
+        
         const { patient_id, test_name, result_data, test_date } = req.body;
         const doctor_id = req.user.id;
+        const file_path = req.file ? req.file.filename : null;
         
         // SQL injection vulnerable query
         const result = await pool.query(
-            `INSERT INTO lab_results (patient_id, doctor_id, test_name, result_data, test_date) 
-             VALUES ('${patient_id}', '${doctor_id}', '${test_name}', '${result_data}', '${test_date}') 
+            `INSERT INTO lab_results (patient_id, doctor_id, test_name, result, test_date, file_path) 
+             VALUES ('${patient_id}', '${doctor_id}', '${test_name}', '${result_data}', '${test_date}', '${file_path}') 
              RETURNING *`
         );
         
@@ -383,6 +424,10 @@ app.get('/api/prescriptions', verifyToken, async (req, res) => {
 
 app.post('/api/prescriptions', verifyToken, async (req, res) => {
     try {
+        if (req.user.role !== 'doctor') {
+            return res.status(403).json({ error: 'Doctor access required' });
+        }
+        
         const { patient_id, medication_name, dosage, frequency, duration, instructions } = req.body;
         const doctor_id = req.user.id;
         
@@ -402,6 +447,10 @@ app.post('/api/prescriptions', verifyToken, async (req, res) => {
 
 app.put('/api/prescriptions/:id/collect', verifyToken, async (req, res) => {
     try {
+        if (req.user.role !== 'pharmacist') {
+            return res.status(403).json({ error: 'Pharmacist access required' });
+        }
+        
         const { id } = req.params;
         
         // SQL injection vulnerable query
@@ -463,9 +512,13 @@ app.post('/api/messages', verifyToken, async (req, res) => {
 
 app.get('/api/patients', verifyToken, async (req, res) => {
     try {
+        if (req.user.role !== 'doctor') {
+            return res.status(403).json({ error: 'Doctor access required' });
+        }
+        
         // SQL injection vulnerable query
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, phone FROM users WHERE role = 'patient'`
+            `SELECT id, first_name, last_name, email, phone, date_of_birth, gender FROM users WHERE role = 'patient'`
         );
         res.json(result.rows);
     } catch (error) {
@@ -495,6 +548,161 @@ app.get('/api/debug/connection', (req, res) => {
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'vulnerable' });
+});
+
+// =======================
+// ADMIN ENDPOINTS - USER MANAGEMENT & STATISTICS
+// =======================
+
+// Get all users (admin only)
+app.get('/api/admin/users', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        // SQL injection vulnerable query
+        const result = await pool.query(
+            `SELECT id, email, role, first_name, last_name, phone, specialization, license_number, created_at 
+             FROM users ORDER BY created_at DESC`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get users error:', error);
+        res.status(500).json({ error: 'Failed to get users' });
+    }
+});
+
+// Create new user (admin only)
+app.post('/api/admin/users', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        const { email, password, role, first_name, last_name, phone, date_of_birth, gender, address, specialization, license_number } = req.body;
+        
+        // Weak password hashing (using only 5 rounds)
+        const hashedPassword = await bcrypt.hash(password, 5);
+        
+        // SQL injection vulnerable query
+        const result = await pool.query(
+            `INSERT INTO users (email, password, role, first_name, last_name, phone, date_of_birth, gender, address, specialization, license_number) 
+             VALUES ('${email}', '${hashedPassword}', '${role}', '${first_name}', '${last_name}', '${phone}', '${date_of_birth}', '${gender}', '${address}', '${specialization}', '${license_number}') 
+             RETURNING id, email, role, first_name, last_name, phone, specialization, license_number, created_at`
+        );
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Create user error:', error);
+        res.status(500).json({ error: 'Failed to create user' });
+    }
+});
+
+// Update user role (admin only)
+app.put('/api/admin/users/:id/role', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        const { id } = req.params;
+        const { role } = req.body;
+        
+        // SQL injection vulnerable query
+        const result = await pool.query(
+            `UPDATE users SET role = '${role}' WHERE id = '${id}' 
+             RETURNING id, email, role, first_name, last_name`
+        );
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Update user role error:', error);
+        res.status(500).json({ error: 'Failed to update user role' });
+    }
+});
+
+// Delete user (admin only)
+app.delete('/api/admin/users/:id', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        const { id } = req.params;
+        
+        // Prevent admin from deleting themselves
+        if (parseInt(id) === req.user.id) {
+            return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+        
+        // SQL injection vulnerable query
+        const result = await pool.query(`DELETE FROM users WHERE id = '${id}' RETURNING *`);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+// Get system statistics (admin only)
+app.get('/api/admin/statistics', verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        // SQL injection vulnerable queries
+        const [userStats, appointmentStats, prescriptionStats, messageStats] = await Promise.all([
+            pool.query(`SELECT role, COUNT(*) as count FROM users GROUP BY role`),
+            pool.query(`SELECT status, COUNT(*) as count FROM appointments GROUP BY status`),
+            pool.query(`SELECT status, COUNT(*) as count FROM prescriptions GROUP BY status`),
+            pool.query(`SELECT COUNT(*) as total_messages FROM messages`)
+        ]);
+        
+        const totalUsers = await pool.query(`SELECT COUNT(*) as total FROM users`);
+        const totalAppointments = await pool.query(`SELECT COUNT(*) as total FROM appointments`);
+        const totalPrescriptions = await pool.query(`SELECT COUNT(*) as total FROM prescriptions`);
+        const totalLabResults = await pool.query(`SELECT COUNT(*) as total FROM lab_results`);
+        
+        res.json({
+            users: {
+                total: parseInt(totalUsers.rows[0].total),
+                by_role: userStats.rows.reduce((acc, row) => {
+                    acc[row.role] = parseInt(row.count);
+                    return acc;
+                }, {})
+            },
+            appointments: {
+                total: parseInt(totalAppointments.rows[0].total),
+                by_status: appointmentStats.rows.reduce((acc, row) => {
+                    acc[row.status] = parseInt(row.count);
+                    return acc;
+                }, {})
+            },
+            prescriptions: {
+                total: parseInt(totalPrescriptions.rows[0].total),
+                by_status: prescriptionStats.rows.reduce((acc, row) => {
+                    acc[row.status || 'pending'] = parseInt(row.count);
+                    return acc;
+                }, {})
+            },
+            lab_results: {
+                total: parseInt(totalLabResults.rows[0].total)
+            },
+            messages: {
+                total: parseInt(messageStats.rows[0].total_messages)
+            }
+        });
+    } catch (error) {
+        console.error('Get statistics error:', error);
+        res.status(500).json({ error: 'Failed to get statistics' });
+    }
 });
 
 // ===== AUTOMATIC SAMPLE DATA INITIALIZATION =====
@@ -542,4 +750,7 @@ const startServer = async () => {
 startServer().catch(error => {
     console.error('💥 Failed to start server:', error);
     process.exit(1);
-}); 
+});
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 

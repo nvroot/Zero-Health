@@ -52,7 +52,10 @@ CREATE TABLE prescriptions (
     frequency VARCHAR(50),
     start_date DATE,
     end_date DATE,
-    status VARCHAR(20), -- No enum type for status validation
+    duration VARCHAR(50), -- Added duration field
+    instructions TEXT, -- Added instructions field
+    status VARCHAR(20) DEFAULT 'pending', -- No enum type for status validation
+    collected_date DATE, -- Added collected_date field
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -92,19 +95,6 @@ CREATE TABLE chat_history (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_chat_history_user_id ON chat_history(user_id);
-
--- Insert some test data with weak security
-INSERT INTO users (email, password, role, first_name, last_name, specialization, license_number) VALUES
-('admin@zerohealth.com', 'admin123', 'admin', 'Admin', 'User', NULL, NULL),
-('doctor@test.com', 'password123', 'doctor', 'Dr. Sarah', 'Johnson', 'Neurology', 'MD12345'),
-('patient@test.com', 'password123', 'patient', 'John', 'Doe', NULL, NULL);
-
--- Add more test doctors with different specializations
-INSERT INTO users (email, password, role, first_name, last_name, specialization, license_number) VALUES
-('dr.smith@zerohealth.com', 'doctor123', 'doctor', 'Dr. Michael', 'Smith', 'Cardiology', 'MD67890'),
-('dr.brown@zerohealth.com', 'doctor123', 'doctor', 'Dr. Emily', 'Brown', 'Orthopedics', 'MD11111'),
-('dr.davis@zerohealth.com', 'doctor123', 'doctor', 'Dr. Robert', 'Davis', 'Pediatrics', 'MD22222'),
-('dr.wilson@zerohealth.com', 'doctor123', 'doctor', 'Dr. Lisa', 'Wilson', 'Dermatology', 'MD33333');
 
 -- Grant excessive permissions (deliberately weak)
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;

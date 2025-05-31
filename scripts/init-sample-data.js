@@ -54,6 +54,75 @@ async function initializeSchema() {
   }
 }
 
+// Create sample images function
+async function createSampleImages() {
+  try {
+    // Ensure uploads directory exists
+    const uploadsDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Blood test SVG
+    const bloodTestSvg = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <rect x="20" y="20" width="360" height="50" fill="#e3f2fd" stroke="#2196f3" stroke-width="1"/>
+  <text x="200" y="50" font-family="Arial" font-size="20" fill="#1976d2" text-anchor="middle" font-weight="bold">Blood Test Results</text>
+  <text x="40" y="90" font-family="Arial" font-size="14" fill="#333">Complete Blood Count (CBC)</text>
+  <text x="40" y="120" font-family="Arial" font-size="12" fill="#666">WBC: 7.2 K/μL (Normal: 4.5-11.0)</text>
+  <text x="40" y="140" font-family="Arial" font-size="12" fill="#666">RBC: 4.5 M/μL (Normal: 4.5-5.9)</text>
+  <text x="40" y="160" font-family="Arial" font-size="12" fill="#666">Hemoglobin: 14.2 g/dL (Normal: 14.0-18.0)</text>
+  <text x="40" y="180" font-family="Arial" font-size="12" fill="#666">Hematocrit: 42.1% (Normal: 42-52)</text>
+  <text x="40" y="200" font-family="Arial" font-size="12" fill="#666">Platelets: 285 K/μL (Normal: 150-450)</text>
+  <rect x="300" y="220" width="80" height="25" fill="#4caf50" rx="4"/>
+  <text x="340" y="238" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">NORMAL</text>
+</svg>`;
+
+    // X-ray SVG
+    const xraySvg = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#2c2c2c" stroke="#666" stroke-width="2"/>
+  <rect x="20" y="20" width="360" height="40" fill="#333" stroke="#666" stroke-width="1"/>
+  <text x="200" y="45" font-family="Arial" font-size="18" fill="#fff" text-anchor="middle" font-weight="bold">Chest X-Ray</text>
+  <ellipse cx="200" cy="160" rx="80" ry="60" fill="#444" stroke="#888" stroke-width="2"/>
+  <ellipse cx="200" cy="160" rx="60" ry="45" fill="#555" stroke="#999" stroke-width="1"/>
+  <circle cx="180" cy="140" r="15" fill="#666" stroke="#aaa" stroke-width="1"/>
+  <circle cx="220" cy="140" r="15" fill="#666" stroke="#aaa" stroke-width="1"/>
+  <rect x="190" y="180" width="20" height="30" fill="#777" stroke="#aaa" stroke-width="1"/>
+  <text x="200" y="250" font-family="Arial" font-size="14" fill="#ccc" text-anchor="middle">Clear lungs - No abnormalities</text>
+  <rect x="300" y="260" width="80" height="25" fill="#4caf50" rx="4"/>
+  <text x="340" y="278" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">NORMAL</text>
+</svg>`;
+
+    // MRI SVG
+    const mriSvg = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+  <rect x="20" y="20" width="360" height="40" fill="#000" stroke="#666" stroke-width="1"/>
+  <text x="200" y="45" font-family="Arial" font-size="18" fill="#fff" text-anchor="middle" font-weight="bold">Brain MRI Scan</text>
+  <circle cx="200" cy="160" r="70" fill="#333" stroke="#666" stroke-width="2"/>
+  <circle cx="200" cy="160" r="50" fill="#444" stroke="#777" stroke-width="1"/>
+  <ellipse cx="200" cy="140" rx="30" ry="20" fill="#555" stroke="#888" stroke-width="1"/>
+  <ellipse cx="200" cy="180" rx="25" ry="15" fill="#666" stroke="#999" stroke-width="1"/>
+  <circle cx="185" cy="130" r="5" fill="#777"/>
+  <circle cx="215" cy="130" r="5" fill="#777"/>
+  <path d="M 180 190 Q 200 200 220 190" stroke="#aaa" stroke-width="2" fill="none"/>
+  <text x="200" y="250" font-family="Arial" font-size="14" fill="#ccc" text-anchor="middle">Normal brain structure</text>
+  <rect x="300" y="260" width="80" height="25" fill="#4caf50" rx="4"/>
+  <text x="340" y="278" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">NORMAL</text>
+</svg>`;
+
+    // Write the files
+    fs.writeFileSync(path.join(uploadsDir, 'sample-blood-1.svg'), bloodTestSvg);
+    fs.writeFileSync(path.join(uploadsDir, 'sample-xray-1.svg'), xraySvg);
+    fs.writeFileSync(path.join(uploadsDir, 'sample-mri-1.svg'), mriSvg);
+
+    console.log('✅ Sample images created successfully!');
+    return true;
+  } catch (error) {
+    console.log('⚠️ Failed to create sample images:', error.message);
+    return false;
+  }
+}
+
 // Main initialization function
 async function initializeSampleData() {
   const startTime = Date.now();
@@ -70,6 +139,10 @@ async function initializeSampleData() {
       console.log('✅ Database schema already exists');
     }
     
+    // Step 1.5: Create sample images
+    console.log('\n🖼️ Step 1.5: Creating sample images...');
+    await createSampleImages();
+    
     // Step 2: Check and create users
     console.log('\n👥 Step 2: Checking users...');
     if (!(await hasSpecificData('users', "email = 'patient@test.com'"))) {
@@ -79,21 +152,24 @@ async function initializeSampleData() {
       // Add admin user
       await pool.query(
         `INSERT INTO users (first_name, last_name, email, password, role, phone) 
-         VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`,
+         VALUES ($1, $2, $3, $4, $5, $6) 
+         ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, phone = $6`,
         ['Admin', 'User', 'admin@zerohealth.com', hashedPassword, 'admin', '+1-555-0001']
       );
       
       // Add test patient
       await pool.query(
         `INSERT INTO users (first_name, last_name, email, password, role, date_of_birth, phone) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (email) DO NOTHING`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, date_of_birth = $6, phone = $7`,
         ['John', 'Doe', 'patient@test.com', hashedPassword, 'patient', '1985-06-15', '+1-555-0123']
       );
       
       // Add test doctor
       await pool.query(
         `INSERT INTO users (first_name, last_name, email, password, role, phone) 
-         VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`,
+         VALUES ($1, $2, $3, $4, $5, $6) 
+         ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, phone = $6`,
         ['Dr. Sarah', 'Johnson', 'doctor@test.com', hashedPassword, 'doctor', '+1-555-0456']
       );
       
@@ -108,8 +184,24 @@ async function initializeSampleData() {
       for (const [firstName, lastName, email] of doctors) {
         await pool.query(
           `INSERT INTO users (first_name, last_name, email, password, role, phone) 
-           VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO NOTHING`,
+           VALUES ($1, $2, $3, $4, $5, $6) 
+           ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, phone = $6`,
           [firstName, lastName, email, hashedPassword, 'doctor', '+1-555-0999']
+        );
+      }
+      
+      // Add pharmacist accounts  
+      const pharmacists = [
+        ['Sarah', 'Johnson', 'pharmacist@zerohealth.com', 'PH12345'],
+        ['Mark', 'Thompson', 'pharmacist2@zerohealth.com', 'PH67890']
+      ];
+      
+      for (const [firstName, lastName, email, licenseNumber] of pharmacists) {
+        await pool.query(
+          `INSERT INTO users (first_name, last_name, email, password, role, phone, license_number) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7) 
+           ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, phone = $6, license_number = $7`,
+          [firstName, lastName, email, hashedPassword, 'pharmacist', '+1-555-0888', licenseNumber]
         );
       }
       
@@ -211,19 +303,19 @@ async function initializeSampleData() {
         const doctorId = doctorResult.rows[0].id;
         
         const labResults = [
-          ['Complete Blood Count (CBC)', 'WBC: 7.2, RBC: 4.5, Hemoglobin: 14.2, Hematocrit: 42.1, Platelets: 285', '2024-01-15'],
-          ['Comprehensive Metabolic Panel', 'Glucose: 92, BUN: 18, Creatinine: 1.0, Sodium: 140, Potassium: 4.2', '2024-01-15'],
-          ['Lipid Panel', 'Total Cholesterol: 195, LDL: 110, HDL: 55, Triglycerides: 150', '2024-02-01'],
-          ['Thyroid Function (TSH)', 'TSH: 2.1, T4: 1.2, T3: 3.1', '2024-02-15'],
-          ['Hemoglobin A1C', 'A1C: 5.4%', '2024-03-01'],
-          ['Vitamin D', 'Vitamin D 25-OH: 22 ng/mL', '2024-03-15']
+          ['Complete Blood Count (CBC)', 'WBC: 7.2, RBC: 4.5, Hemoglobin: 14.2, Hematocrit: 42.1, Platelets: 285', '2024-01-15', 'sample-blood-1.svg'],
+          ['Comprehensive Metabolic Panel', 'Glucose: 92, BUN: 18, Creatinine: 1.0, Sodium: 140, Potassium: 4.2', '2024-01-15', null],
+          ['Chest X-Ray', 'Chest X-ray shows clear lungs with no signs of infection or abnormalities. Heart size normal.', '2024-02-01', 'sample-xray-1.svg'],
+          ['Thyroid Function (TSH)', 'TSH: 2.1, T4: 1.2, T3: 3.1', '2024-02-15', null],
+          ['Brain MRI', 'MRI scan shows normal brain structure with no abnormalities detected.', '2024-03-01', 'sample-mri-1.svg'],
+          ['Vitamin D', 'Vitamin D 25-OH: 22 ng/mL', '2024-03-15', null]
         ];
         
-        for (const [testName, result, testDate] of labResults) {
+        for (const [testName, result, testDate, filePath] of labResults) {
           await pool.query(
-            `INSERT INTO lab_results (patient_id, doctor_id, test_name, result, test_date) 
-             VALUES ($1, $2, $3, $4, $5)`,
-            [patientId, doctorId, testName, result, testDate]
+            `INSERT INTO lab_results (patient_id, doctor_id, test_name, result, test_date, file_path) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [patientId, doctorId, testName, result, testDate, filePath]
           );
         }
         

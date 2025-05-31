@@ -158,15 +158,19 @@ Reset the entire database and get fresh sample data:
 
 The application comes with pre-configured test accounts:
 
-- **Admin**: `admin@zerohealth.com` / `admin123`
+- **Admin**: `admin@zerohealth.com` / `password123`
 - **Doctor**: `doctor@test.com` / `password123`
 - **Patient**: `patient@test.com` / `password123`
 
 Additional doctors with specializations:
-- **Cardiologist**: `dr.smith@zerohealth.com` / `doctor123`
-- **Orthopedist**: `dr.brown@zerohealth.com` / `doctor123`
-- **Pediatrician**: `dr.davis@zerohealth.com` / `doctor123`
-- **Dermatologist**: `dr.wilson@zerohealth.com` / `doctor123`
+- **Cardiologist**: `dr.smith@zerohealth.com` / `password123`
+- **Orthopedist**: `dr.brown@zerohealth.com` / `password123`
+- **Pediatrician**: `dr.davis@zerohealth.com` / `password123`
+- **Dermatologist**: `dr.wilson@zerohealth.com` / `password123`
+
+**Pharmacist accounts:**
+- **Pharmacist 1**: `pharmacist@zerohealth.com` / `password123`
+- **Pharmacist 2**: `pharmacist2@zerohealth.com` / `password123`
 
 ## API Endpoints
 

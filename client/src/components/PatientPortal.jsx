@@ -354,10 +354,48 @@ const PatientPortal = () => {
                 labResults.map(result => (
                   <div key={result.id} className="data-item">
                     <h4>{result.test_name}</h4>
-                    <p><strong>Test Date:</strong> {result.test_date}</p>
-                    <p><strong>Status:</strong> {result.status}</p>
+                    <p><strong>Test Date:</strong> {new Date(result.test_date).toLocaleDateString()}</p>
                     <p><strong>Doctor:</strong> Dr. {result.doctor_first_name} {result.doctor_last_name}</p>
-                    <div className="result-data" dangerouslySetInnerHTML={{__html: result.result_data}}></div>
+                    <div className="result-data">
+                      <strong>Results:</strong>
+                      <div style={{ marginTop: '8px' }} dangerouslySetInnerHTML={{__html: result.result}}></div>
+                    </div>
+                    {result.file_path && (
+                      <div style={{ marginTop: '12px' }}>
+                        <strong>Lab Image:</strong>
+                        <div style={{ marginTop: '8px' }}>
+                          <img 
+                            src={`http://localhost:5000/uploads/${result.file_path}`} 
+                            alt="Lab result" 
+                            style={{
+                              maxWidth: '100%',
+                              height: 'auto',
+                              maxHeight: '300px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(`http://localhost:5000/uploads/${result.file_path}`, '_blank')}
+                          />
+                          <div style={{ marginTop: '4px' }}>
+                            <button
+                              onClick={() => window.open(`http://localhost:5000/uploads/${result.file_path}`, '_blank')}
+                              style={{
+                                background: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              View Full Size
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

@@ -157,6 +157,8 @@ docker-compose up --build
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **AI Chatbot**: Available as floating widget on all pages with role-specific functionality
+- **API Documentation**: http://localhost:5000/api/docs (Interactive Swagger UI)
+- **OpenAPI Spec**: http://localhost:5000/api/openapi.json (Raw JSON specification)
 
 ### Sample Data Management
 
@@ -396,4 +398,4 @@ This application is intentionally vulnerable and should only be used in a contro
 
 **Additional AI Disclaimer**: The AI chatbot system contains deliberate vulnerabilities including prompt injection and SQL injection vectors. These are included for educational purposes to demonstrate AI security risks. Do not deploy similar systems in production without proper security controls.
 
-**UI/UX Disclaimer**: The modern design and professional appearance are intentional to demonstrate how attractive interfaces can mask serious security vulnerabilities. Always prioritize security over aesthetics in real applications. 
+**UI/UX Disclaimer**: The modern design and professional appearance are intentional to demonstrate how attractive interfaces can mask serious security vulnerabilities.

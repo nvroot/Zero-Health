@@ -7,7 +7,7 @@ const options = {
     info: {
       title: 'Zero Health API',
       version: '1.0.0',
-      description: 'A deliberately vulnerable healthcare portal API with AI assistant - for educational purposes only',
+      description: 'A comprehensive healthcare portal API with AI assistant for managing patient records, appointments, and medical data',
       contact: {
         name: 'Zero Health Development Team',
         email: 'dev@zerohealth.com'
@@ -101,12 +101,12 @@ const options = {
       }
     },
     tags: [
-      { name: 'Authentication', description: 'User authentication endpoints' },
-      { name: 'AI Chatbot', description: 'AI-powered chatbot with role-based capabilities' },
-      { name: 'Patient Portal', description: 'Patient-specific endpoints' },
-      { name: 'Staff Dashboard', description: 'Staff-only endpoints (doctors, pharmacists, admins)' },
-      { name: 'Admin', description: 'Administrator-only endpoints' },
-      { name: 'Debug', description: 'Debug endpoints (deliberately exposed vulnerabilities)' }
+      { name: 'Authentication', description: 'User authentication and authorization endpoints' },
+      { name: 'AI Chatbot', description: 'AI-powered medical assistant with role-based capabilities' },
+      { name: 'Patient Portal', description: 'Patient-specific medical data endpoints' },
+      { name: 'Staff Dashboard', description: 'Healthcare staff endpoints for doctors, pharmacists, and admins' },
+      { name: 'Admin', description: 'Administrative endpoints for system management' },
+      { name: 'Debug', description: 'System diagnostic and monitoring endpoints' }
     ]
   },
   apis: [

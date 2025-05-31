@@ -11,10 +11,10 @@ const multer = require('multer');
 
 const app = express();
 
-// Deliberately weak JWT secret
-const JWT_SECRET = 'zero-health-super-secret-key'; // Deliberately weak secret
+// JWT secret configuration
+const JWT_SECRET = 'zero-health-super-secret-key';
 
-// Deliberately weak security configurations
+// CORS configuration
 app.use(cors({
     origin: true,  // Allow any origin (deliberately insecure)
     credentials: true,
@@ -107,6 +107,57 @@ app.options('/api/*', (req, res) => {
     res.status(204).end();
 });
 
+/**
+ * @swagger
+ * /api/register:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Register a new user
+ *     description: Create a new user account in the Zero Health system
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: newuser@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: password123
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Registration failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Authentication endpoints
 app.post('/api/register', async (req, res) => {
     try {
@@ -151,6 +202,50 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: User login
+ *     description: Authenticate user credentials and receive access token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: patient@test.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -535,6 +630,52 @@ app.get('/api/patients', verifyToken, async (req, res) => {
 const chatbotRoutes = require('./routes/chatbot');
 app.use('/api/chatbot', chatbotRoutes);
 
+// =======================
+// SWAGGER API DOCUMENTATION
+// =======================
+const { specs, swaggerUi } = require('./swagger');
+
+// Serve Swagger UI at /api/docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Zero Health API Documentation'
+}));
+
+// Serve raw OpenAPI spec as JSON
+app.get('/api/openapi.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(specs);
+});
+
+/**
+ * @swagger
+ * /api/debug/connection:
+ *   get:
+ *     tags: [Debug]
+ *     summary: Get database connection details
+ *     description: Retrieve current database connection configuration for monitoring
+ *     responses:
+ *       200:
+ *         description: Database connection details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: string
+ *                   example: postgres
+ *                 host:
+ *                   type: string
+ *                   example: db
+ *                 database:
+ *                   type: string
+ *                   example: zero_health
+ *                 port:
+ *                   type: integer
+ *                   example: 5432
+ */
 // Exposed database connection for demonstration
 app.get('/api/debug/connection', (req, res) => {
     res.json({
@@ -545,6 +686,25 @@ app.get('/api/debug/connection', (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     tags: [Debug]
+ *     summary: API health check
+ *     description: Basic health check endpoint
+ *     responses:
+ *       200:
+ *         description: API is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: vulnerable
+ */
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'vulnerable' });
@@ -554,6 +714,37 @@ app.get('/api/health', (req, res) => {
 // ADMIN ENDPOINTS - USER MANAGEMENT & STATISTICS
 // =======================
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get all users (Admin only)
+ *     description: Retrieve a complete list of all users in the system (requires administrative privileges)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       403:
+ *         description: Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Get all users (admin only)
 app.get('/api/admin/users', verifyToken, async (req, res) => {
     try {
@@ -734,10 +925,10 @@ const startServer = async () => {
         // Start the server
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
-            console.log(`🌐 Server running on port ${PORT}`);
-            console.log('⚠️ Warning: This is a deliberately vulnerable application for educational purposes');
-            console.log('📧 Patient login: patient@test.com / password123');
-            console.log('👩‍⚕️ Doctor login: doctor@test.com / password123');
+            console.log(`🌐 Zero Health Server running on port ${PORT}`);
+            console.log('🏥 Healthcare Portal API initialized successfully');
+            console.log('📧 Test Patient login: patient@test.com / password123');
+            console.log('👩‍⚕️ Test Doctor login: doctor@test.com / password123');
         });
     } catch (error) {
         console.error('💥 Database connection failed:', error.message);

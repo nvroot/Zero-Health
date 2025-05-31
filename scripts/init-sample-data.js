@@ -162,7 +162,7 @@ async function initializeSampleData() {
         `INSERT INTO users (first_name, last_name, email, password, role, date_of_birth, phone) 
          VALUES ($1, $2, $3, $4, $5, $6, $7) 
          ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, date_of_birth = $6, phone = $7`,
-        ['John', 'Doe', 'patient@test.com', hashedPassword, 'patient', '1985-06-15', '+1-555-0123']
+        ['Samuel', 'L Jackson', 'patient@test.com', hashedPassword, 'patient', '1985-06-15', '+1-555-0123']
       );
       
       // Add test doctor
@@ -170,15 +170,15 @@ async function initializeSampleData() {
         `INSERT INTO users (first_name, last_name, email, password, role, phone) 
          VALUES ($1, $2, $3, $4, $5, $6) 
          ON CONFLICT (email) DO UPDATE SET password = $4, first_name = $1, last_name = $2, role = $5, phone = $6`,
-        ['Dr. Sarah', 'Johnson', 'doctor@test.com', hashedPassword, 'doctor', '+1-555-0456']
+        ['Dr. Kendrick', 'Lawal', 'doctor@test.com', hashedPassword, 'doctor', '+1-555-0456']
       );
       
       // Add additional doctors
       const doctors = [
-        ['Dr. Michael', 'Smith', 'dr.smith@zerohealth.com'],
-        ['Dr. Emily', 'Brown', 'dr.brown@zerohealth.com'],
-        ['Dr. James', 'Davis', 'dr.davis@zerohealth.com'],
-        ['Dr. Lisa', 'Wilson', 'dr.wilson@zerohealth.com']
+        ['Dr. Marshall D.', 'Teach', 'dr.teach@zerohealth.com'],
+        ['Dr. Erwin', 'Smith', 'dr.smith@zerohealth.com'],
+        ['Dr. Tinu', 'Buhari', 'dr.buhari@zerohealth.com'],
+        ['Dr. Acule', 'Mihawk', 'dr.mihawk@zerohealth.com']
       ];
       
       for (const [firstName, lastName, email] of doctors) {
@@ -192,8 +192,8 @@ async function initializeSampleData() {
       
       // Add pharmacist accounts  
       const pharmacists = [
-        ['Sarah', 'Johnson', 'pharmacist@zerohealth.com', 'PH12345'],
-        ['Mark', 'Thompson', 'pharmacist2@zerohealth.com', 'PH67890']
+        ['Ugo C', 'Shege', 'ugocshege@zerohealth.com', 'PH12345'],
+        ['Pablo', 'Escrowbar', 'escrowbar@zerohealth.com', 'PH67890']
       ];
       
       for (const [firstName, lastName, email, licenseNumber] of pharmacists) {

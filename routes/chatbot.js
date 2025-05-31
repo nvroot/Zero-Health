@@ -86,6 +86,72 @@ const authenticateUser = (req, res, next) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/chatbot/chat:
+ *   post:
+ *     tags: [AI Chatbot]
+ *     summary: Chat with AI assistant
+ *     description: Send a message to the AI medical assistant for health questions and healthcare support
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 maxLength: 5000
+ *                 example: "Show me my recent lab results"
+ *     responses:
+ *       200:
+ *         description: AI response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   type: string
+ *                   example: "Here are your recent lab results: ..."
+ *                 intent:
+ *                   type: string
+ *                   enum: [conversation, action]
+ *                   example: action
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Invalid message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                 details:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ */
 // Main chat endpoint with two-step LLM approach
 router.post('/chat', authenticateUser, async (req, res) => {
   try {

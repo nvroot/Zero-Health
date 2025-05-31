@@ -473,7 +473,7 @@ const PatientPortal = () => {
                     <textarea
                       value={newMessage.content}
                       onChange={(e) => setNewMessage({...newMessage, content: e.target.value})}
-                      placeholder="Your message (no XSS protection, enjoy!)"
+                      placeholder="Type your message here..."
                       rows="5"
                       required
                     />

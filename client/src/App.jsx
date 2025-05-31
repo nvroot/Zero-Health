@@ -36,7 +36,7 @@ const PrivateRoute = ({ children }) => {
 const RoleBasedDashboard = () => {
   const userRole = getUserRole();
   
-  if (userRole === 'doctor' || userRole === 'pharmacist') {
+  if (userRole === 'doctor' || userRole === 'pharmacist' || userRole === 'admin') {
     return <StaffDashboard />;
   } else {
     return <PatientPortal />;

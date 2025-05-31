@@ -17,6 +17,32 @@ services:
       timeout: 5s
       retries: 5
 
+  # Local LLM Service using Ollama
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11435}:11434"  # Custom port to avoid conflicts
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep ollama || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Uncomment the following lines if you have NVIDIA GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    # To disable Ollama service entirely, comment out this entire ollama service block
+
   server:
     build: .
     ports:
@@ -28,12 +54,32 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - JWT_SECRET=your-secret-key-here
-      # OpenAI Configuration - Pass environment variable from host
-      - OPENAI_API_KEY
-      - OPENAI_MODEL=gpt-4o-mini
-      - OPENAI_BASE_URL=https://api.openai.com/v1
+      # LLM Configuration - supports both OpenAI and local Ollama
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}  # Options: 'openai' or 'ollama'
+      - OPENAI_API_KEY      # Required if LLM_PROVIDER=openai
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      # Ollama configuration - centralized settings
+      - OLLAMA_PORT=${OLLAMA_PORT:-11435}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:3b}  # Default model for Ollama
+    command: >
+      sh -c "
+        echo '🚀 Starting Zero Health Server...' &&
+        if [ \"$$LLM_PROVIDER\" = \"ollama\" ]; then
+          echo '🤖 Starting Ollama model setup in background...' &&
+          sh /app/scripts/setup-ollama-async.sh > /tmp/ollama-setup.log 2>&1 &
+        else
+          echo '☁️ Using cloud AI provider, skipping Ollama setup'
+        fi &&
+        echo '🌟 Starting Node.js server...' &&
+        node server.js
+      "
     depends_on:
       db:
+        condition: service_healthy
+      # Comment out the ollama dependency if you disable the ollama service
+      ollama:
         condition: service_healthy
     restart: unless-stopped
 
@@ -48,4 +94,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  ollama_data: 

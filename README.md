@@ -30,38 +30,44 @@ git clone https://github.com/yourusername/zero-health.git
 cd zero-health
 ```
 
-### 2. Set API Key Environment Variable  
-⚠️ **Important**: You may need to define the OpenAI key while running docker compose:
+### 2. AI Provider Configuration
 
+Zero Health includes a **containerized local LLM (Ollama)** by default for complete offline operation. You can also use cloud AI providers.
+
+#### Option A: Local AI (Default) - Ollama
 ```bash
-# For OpenAI
-OPENAI_API_KEY=sk-your-key-here docker-compose up --build
-
-# For other providers (examples):
-OPENAI_API_KEY=your-groq-key docker-compose up --build
-OPENAI_API_KEY=lm-studio docker-compose up --build
-OPENAI_API_KEY=ollama docker-compose up --build
-```
-
-Alternatively, set environment variables first:
-```bash
-export OPENAI_API_KEY="your-api-key-here"
-export OPENAI_MODEL="gpt-4o-mini"  # Optional: defaults to gpt-4o-mini
-export OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional: defaults to OpenAI
-```
-
-### 3. Start Application
-```bash
+# Uses local Ollama container - no API key needed
 docker-compose up --build
 ```
 
-**Note** You may need to run docker-compose with sudo, and this may lead to environment variables not being passed from the shell. If you're having issues with the chatbot, try this:
+#### Option B: Cloud AI (OpenAI/Groq/etc.)
+```bash
+# Set provider to use cloud AI instead of local Ollama
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-your-key-here
+docker-compose up --build
+```
+
+#### Option C: Custom Ollama Port
+```bash
+# Change Ollama port if you have a conflicting service
+export OLLAMA_PORT=11436
+docker-compose up --build
+```
+
+#### Option D: Disable Local AI Entirely
+To disable the Ollama service completely (if you only want to use cloud AI):
+1. Edit `docker-compose.yml`
+2. Comment out the entire `ollama:` service block
+3. Comment out the `ollama:` dependency in the `server:` section
+
+**Note:** You may need to run docker-compose with sudo, and this may lead to environment variables not being passed from the shell. If you're having issues with the chatbot, try this:
 
 ```bash
 OPENAI_API_KEY=$OPENAI_API_KEY docker-compose up --build
 ```
 
-### 4. Access Application
+### 3. Access Application
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **API Documentation**: http://localhost:5000/api/docs
@@ -173,11 +179,14 @@ By studying this application, learn:
 ### 📱 **Mobile App**
 React Native application with mobile-specific vulnerabilities (insecure storage, certificate pinning bypass)
 
-### 🐳 **Containerized Local LLM**  
-Fully offline AI experience with pre-configured vulnerable LLM setup
-
 ### 🔥 **HARD MODE**
 Advanced multi-step attack chains and modern vulnerability scenarios
+
+### 🧪 **Advanced AI Vulnerabilities**
+- Model extraction attacks
+- Adversarial prompt techniques  
+- LLM jailbreak scenarios
+- AI-powered automated exploitation
 
 ## Contributing
 
@@ -185,11 +194,19 @@ Contributions welcome! Please maintain educational vulnerability aspects and doc
 
 ## Environment Variables
 
-### Required (AI Chatbot)
+### AI Provider Configuration
 ```bash
-OPENAI_API_KEY=your-api-key-here
-OPENAI_MODEL=gpt-4o-mini                    # Optional
-OPENAI_BASE_URL=https://api.openai.com/v1   # Optional
+# Choose AI provider (default: ollama for offline usage)
+LLM_PROVIDER=ollama                         # Options: 'openai' or 'ollama'
+
+# OpenAI/Cloud AI Settings (only needed if LLM_PROVIDER=openai)
+OPENAI_API_KEY=your-api-key-here            # Required for cloud AI
+OPENAI_MODEL=gpt-4o-mini                    # Optional: model to use
+OPENAI_BASE_URL=https://api.openai.com/v1   # Optional: API endpoint
+
+# Ollama/Local AI Settings (only needed if LLM_PROVIDER=ollama)
+OLLAMA_PORT=11435                           # Optional: external port (default: 11435)
+OLLAMA_MODEL=llama3.2:3b                    # Optional: model to use
 ```
 
 ### Database (Auto-configured in Docker)
@@ -197,6 +214,36 @@ OPENAI_BASE_URL=https://api.openai.com/v1   # Optional
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres  
 POSTGRES_DB=zero_health
+```
+
+### Full Example Configurations
+
+#### Local AI (Offline) - Default
+```bash
+# No environment variables needed - just run:
+docker-compose up --build
+```
+
+#### Cloud AI (OpenAI)
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-your-key-here
+docker-compose up --build
+```
+
+#### Cloud AI (Groq)
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=your-groq-key
+export OPENAI_BASE_URL=https://api.groq.com/openai/v1
+export OPENAI_MODEL=llama3-8b-8192
+docker-compose up --build
+```
+
+#### Custom Ollama Port
+```bash
+export OLLAMA_PORT=11436
+docker-compose up --build
 ```
 
 ## License

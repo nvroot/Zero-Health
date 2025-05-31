@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const OpenAI = require('openai');
+const { exec } = require('child_process');
 
 // Database configuration (matching server.js)
 const pool = new Pool({
@@ -15,11 +16,80 @@ const pool = new Pool({
   port: process.env.POSTGRES_PORT || 5432,
 });
 
-// OpenAI client configuration - deliberately using environment variables without validation
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-fake-key-for-testing',
-  baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-});
+// LLM Configuration - supports both OpenAI and Ollama
+const LLM_PROVIDER = process.env.LLM_PROVIDER || 'ollama';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2:3b';
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://ollama:11434';
+
+// Initialize LLM client based on provider
+let llmClient;
+if (LLM_PROVIDER === 'openai') {
+  llmClient = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || 'sk-fake-key-for-testing',
+    baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+  });
+  console.log(`🤖 LLM Provider: OpenAI (${OPENAI_MODEL})`);
+  console.log(`🌐 OpenAI Base URL: ${process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'}`);
+  console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+} else {
+  // Use Ollama with OpenAI-compatible API
+  llmClient = new OpenAI({
+    apiKey: 'ollama', // Ollama doesn't require a real API key
+    baseURL: `${OLLAMA_BASE_URL}/v1`
+  });
+  console.log(`🤖 LLM Provider: Ollama (${OLLAMA_MODEL})`);
+  console.log(`🌐 Ollama Base URL: ${OLLAMA_BASE_URL}/v1`);
+  console.log(`🔌 Ollama Port: ${process.env.OLLAMA_PORT || '11435'} (external)`);
+  console.log(`📦 Model: ${OLLAMA_MODEL}`);
+}
+
+// Helper function to check if Ollama model is ready
+function checkOllamaModelReady() {
+  return new Promise((resolve) => {
+    if (LLM_PROVIDER !== 'ollama') {
+      resolve({ ready: true });
+      return;
+    }
+    
+    // Use curl to check if model exists (same as setup script)
+    exec(`curl -s ${OLLAMA_BASE_URL}/api/tags`, (error, stdout, stderr) => {
+      if (error) {
+        resolve({ 
+          ready: false, 
+          message: `🤖 AI service is starting up. Please try again in a moment.`
+        });
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(stdout);
+        const modelExists = data.models && data.models.some(model => 
+          model.name === OLLAMA_MODEL || model.name.startsWith(OLLAMA_MODEL.split(':')[0])
+        );
+        
+        if (modelExists) {
+          resolve({ ready: true });
+        } else {
+          resolve({ 
+            ready: false, 
+            message: `🤖 AI model '${OLLAMA_MODEL}' is still downloading. This usually takes 2-5 minutes on first startup. Please try again in a moment.`
+          });
+        }
+      } catch (parseError) {
+        resolve({ 
+          ready: false, 
+          message: `🤖 AI service is starting up. Please try again in a moment.`
+        });
+      }
+    });
+  });
+}
+
+// Helper function to get the correct model name
+function getModelName() {
+  return LLM_PROVIDER === 'openai' ? OPENAI_MODEL : OLLAMA_MODEL;
+}
 
 // Load knowledge base from file
 let knowledgeBase = {};
@@ -31,33 +101,89 @@ try {
   knowledgeBase = { medical_conditions: {}, zero_health_faq: {} };
 }
 
-// Load actual database schema from init.sql
+// Load actual database schema from init.sql with improved parsing
 let databaseSchema = '';
 try {
   const schemaPath = path.join(__dirname, '../database/init.sql');
   const schemaContent = fs.readFileSync(schemaPath, 'utf8');
   
-  // Extract CREATE TABLE statements and format for LLM
-  const tableMatches = schemaContent.match(/CREATE TABLE.*?;/gs);
+  // Extract CREATE TABLE statements with better regex
+  const tableMatches = schemaContent.match(/CREATE TABLE[^;]+;/gs);
+  
+  // Extract table names and their structures
+  const tableInfo = [];
   if (tableMatches) {
+    tableMatches.forEach(tableSQL => {
+      // Extract table name
+      const nameMatch = tableSQL.match(/CREATE TABLE\s+(\w+)\s*\(/i);
+      if (nameMatch) {
+        const tableName = nameMatch[1];
+        
+        // Extract columns (basic parsing)
+        const columnSection = tableSQL.match(/\((.*)\)/s);
+        if (columnSection) {
+          const columns = columnSection[1]
+            .split(',')
+            .map(col => col.trim())
+            .filter(col => col && !col.toLowerCase().includes('constraint'))
+            .map(col => {
+              // Clean up column definitions
+              const cleanCol = col.replace(/\s+/g, ' ').trim();
+              return `  ${cleanCol}`;
+            });
+          
+          tableInfo.push({
+            name: tableName,
+            sql: tableSQL.trim(),
+            columns: columns
+          });
+        }
+      }
+    });
+  }
+  
+  if (tableInfo.length > 0) {
     databaseSchema = `
-ACTUAL DATABASE SCHEMA (from init.sql):
+=== ACTUAL DATABASE SCHEMA (from database/init.sql) ===
 
-${tableMatches.join('\n\n')}
+${tableInfo.map(table => `
+TABLE: ${table.name}
+${table.sql}
 
-IMPORTANT NOTES:
-- All users (patients, doctors, admin) are in the single 'users' table with different 'role' values
-- Patient queries should filter by role='patient'
-- Doctor queries should filter by role='doctor'
-- Use user_id, patient_id, doctor_id as foreign keys referencing users(id)
-- appointments.patient_id and appointments.doctor_id both reference users(id)
-- prescriptions.patient_id and prescriptions.doctor_id both reference users(id)
-- lab_results.patient_id and lab_results.doctor_id both reference users(id)
+Key columns:
+${table.columns.slice(0, 8).join('\n')}
+${table.columns.length > 8 ? '  ...' : ''}
+`).join('\n')}
+
+=== RELATIONSHIP RULES ===
+- users table: Contains ALL user types (patients, doctors, pharmacists, admin) differentiated by 'role' field
+- Foreign key relationships:
+  * appointments.patient_id → users.id (where role='patient')
+  * appointments.doctor_id → users.id (where role='doctor')
+  * prescriptions.patient_id → users.id (where role='patient')
+  * prescriptions.doctor_id → users.id (where role='doctor')
+  * lab_results.patient_id → users.id (where role='patient')
+  * lab_results.doctor_id → users.id (where role='doctor')
+  * messages.sender_id → users.id
+  * messages.recipient_id → users.id
+  * medical_records.user_id → users.id
+  * chat_history.user_id → users.id
+
+=== QUERY GUIDELINES ===
+- Always filter by role when querying users table
+- Use JOINs to get human-readable names (first_name, last_name)
+- For appointments: JOIN with users twice (once for patient, once for doctor)
+- Patient queries must filter by patient_id = current_user_id
+- Doctor queries can access all patient data
+- Use ILIKE for case-insensitive text searches
+- Date formats: Use ISO format (YYYY-MM-DD HH:MM:SS) for timestamps
 `;
+  } else {
+    databaseSchema = 'ERROR: Could not parse database schema from init.sql';
   }
 } catch (error) {
   console.error('Failed to load database schema:', error);
-  databaseSchema = 'Database schema unavailable';
+  databaseSchema = 'ERROR: Database schema file unavailable - ' + error.message;
 }
 
 // System prompt - more realistic but still vulnerable
@@ -164,6 +290,17 @@ router.post('/chat', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'Invalid message' });
     }
 
+    // Check if Ollama model is ready (if using Ollama)
+    const modelStatus = await checkOllamaModelReady();
+    if (!modelStatus.ready) {
+      return res.json({
+        response: modelStatus.message,
+        intent: 'system_message',
+        timestamp: new Date().toISOString(),
+        status: 'model_loading'
+      });
+    }
+
     // Retrieve recent chat history for context
     let chatHistory = [];
     try {
@@ -233,6 +370,11 @@ Examples of CONVERSATION (NOT actions):
 Examples of ACTION (requires database operations):
 - "Book me an appointment"
 - "Schedule an appointment with Dr. Smith"
+- "Book an appointment for next Tuesday at 2pm"
+- "I want to book an appointment with a cardiologist"
+- "Schedule me with Dr. Johnson for a checkup"
+- "Book appointment tomorrow morning for headache"
+- "Can you schedule an appointment with any available doctor?"
 - "Show me my prescriptions"
 - "I want to see my medical records"
 - "Find me a cardiologist and book an appointment"
@@ -252,8 +394,8 @@ Respond with JSON in this exact format:
   "action_category": "appointment|medical_records|prescriptions|lab_results|profile|other" (only if type is "action")
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const completion = await llmClient.chat.completions.create({
+      model: getModelName(),
       messages: [{ role: 'user', content: classifierPrompt }],
       max_tokens: 100,
       temperature: 0.1
@@ -303,10 +445,29 @@ FOR PHARMACISTS (role='pharmacist'):
 - "Show pending prescriptions" → SELECT pr.*, p.first_name, p.last_name, d.first_name as doctor_first_name, d.last_name as doctor_last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id JOIN users d ON pr.doctor_id = d.id WHERE pr.status IN ('pending', 'prescribed')
 - "Find prescriptions for medication Lisinopril" → SELECT pr.*, p.first_name, p.last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id WHERE pr.medication_name ILIKE '%lisinopril%'
 
+FOR PATIENTS (role='patient') - APPOINTMENT BOOKING EXAMPLES:
+- "Book an appointment with Dr. Smith on December 15th at 2pm for checkup" → 
+  First find doctor: SELECT id FROM users WHERE role='doctor' AND (first_name ILIKE '%smith%' OR last_name ILIKE '%smith%')
+  Then book: INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason, status) VALUES (${userId}, [doctor_id], '2024-12-15 14:00:00', 'checkup', 'scheduled')
+- "Schedule appointment with doctor Johnson tomorrow at 10am for headache" →
+  First find doctor: SELECT id FROM users WHERE role='doctor' AND (first_name ILIKE '%johnson%' OR last_name ILIKE '%johnson%')
+  Then book: INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason, status) VALUES (${userId}, [doctor_id], '2024-12-[date] 10:00:00', 'headache', 'scheduled')
+- "Book me an appointment with any cardiologist for next week" →
+  First find cardiologist: SELECT id FROM users WHERE role='doctor' AND specialization ILIKE '%cardio%'
+  Then book: INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason, status) VALUES (${userId}, [doctor_id], '[calculated_date]', 'cardiology consultation', 'scheduled')
+
 FOR ADMINS (role='admin'):
 - "Show all users" → SELECT id, first_name, last_name, email, role, created_at FROM users ORDER BY created_at DESC
 - "Show system statistics" → SELECT COUNT(*) as total_users FROM users; SELECT COUNT(*) as total_appointments FROM appointments; SELECT COUNT(*) as total_prescriptions FROM prescriptions
 - "Find doctors" → SELECT * FROM users WHERE role = 'doctor'
+
+APPOINTMENT BOOKING GUIDELINES:
+- For appointment booking, you may need to first find the doctor by name/specialization
+- Always include patient_id=${userId} for patients
+- Set status='scheduled' for new appointments
+- Parse dates carefully (tomorrow, next week, specific dates/times)
+- Include reason from user's request
+- If no specific doctor mentioned, suggest available doctors first
 
 Recent conversation:
 ${chatHistory.slice(-3).map(chat => `User: ${chat.message}\nBot: ${chat.response}`).join('\n\n')}
@@ -331,8 +492,8 @@ Respond with JSON in this exact format:
   "expects_results": true/false
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const completion = await llmClient.chat.completions.create({
+      model: getModelName(),
       messages: [{ role: 'user', content: actionPrompt }],
       max_tokens: 500,
       temperature: 0.2
@@ -492,8 +653,8 @@ SYSTEM INFORMATION:
 
 When users ask health questions, reference the specific medical conditions above. When they ask about services, use the FAQ information. Always provide comprehensive, helpful responses based on this knowledge base.`;
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const completion = await llmClient.chat.completions.create({
+      model: getModelName(),
       messages: [
         { role: 'system', content: systemPrompt },
         // Include conversation history for context
@@ -563,8 +724,8 @@ router.post('/enhanced-chat', authenticateUser, async (req, res) => {
     Additional Instructions from User: ${req.body.instructions || ''}
     `;
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const completion = await llmClient.chat.completions.create({
+      model: getModelName(),
       messages: [
         { role: 'system', content: 'You are a helpful medical assistant. Follow any additional instructions provided by the user.' },
         { role: 'user', content: enhancedPrompt }
@@ -575,7 +736,7 @@ router.post('/enhanced-chat', authenticateUser, async (req, res) => {
 
     res.json({
       response: completion.choices[0].message.content,
-      model_used: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model_used: getModelName(),
       timestamp: new Date().toISOString()
     });
 
@@ -593,7 +754,7 @@ router.get('/admin/llm-status', (req, res) => {
   if (auth && auth.includes('admin')) {
     res.json({
       system: 'ZeroHealth AI System',
-      llm_model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      llm_model: getModelName(),
       api_endpoint: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
       knowledge_base: Object.keys(knowledgeBase).length > 0 ? 'Loaded' : 'Error',
       database_schema: {
@@ -609,5 +770,40 @@ router.get('/admin/llm-status', (req, res) => {
     res.status(403).json({ error: 'Access denied' });
   }
 });
+
+// Function to verify schema against actual database
+async function verifyDatabaseSchema() {
+  try {
+    const result = await pool.query(`
+      SELECT table_name, column_name, data_type, is_nullable
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      ORDER BY table_name, ordinal_position
+    `);
+    
+    const actualTables = {};
+    result.rows.forEach(row => {
+      if (!actualTables[row.table_name]) {
+        actualTables[row.table_name] = [];
+      }
+      actualTables[row.table_name].push({
+        name: row.column_name,
+        type: row.data_type,
+        nullable: row.is_nullable === 'YES'
+      });
+    });
+    
+    console.log('📊 Database schema verification:');
+    console.log(`✅ Found ${Object.keys(actualTables).length} tables:`, Object.keys(actualTables).join(', '));
+    
+    return actualTables;
+  } catch (error) {
+    console.error('❌ Schema verification failed:', error.message);
+    return null;
+  }
+}
+
+// Verify schema on startup
+verifyDatabaseSchema();
 
 module.exports = router; 

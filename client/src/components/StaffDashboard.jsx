@@ -48,6 +48,7 @@ const StaffDashboard = () => {
     subject: '',
     content: ''
   });
+  const [replyAttachment, setReplyAttachment] = useState(null);
   const [showLabForm, setShowLabForm] = useState(false);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [showUserForm, setShowUserForm] = useState(false);
@@ -353,14 +354,25 @@ const StaffDashboard = () => {
   const handleReplyMessage = async (e) => {
     e.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append('recipient_id', newReply.recipient_id);
+      formData.append('subject', newReply.subject);
+      formData.append('content', newReply.content);
+      if (replyAttachment) {
+        formData.append('attachment', replyAttachment);
+      }
+      
       const response = await fetch('http://localhost:5000/api/messages', {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(newReply)
+        headers: {
+          'Authorization': getAuthToken() ? `Bearer ${getAuthToken()}` : ''
+        },
+        body: formData
       });
       
       if (response.ok) {
         setNewReply({ recipient_id: '', subject: '', content: '' });
+        setReplyAttachment(null);
         setReplyingTo(null);
         fetchMessages();
         setError('');
@@ -729,6 +741,24 @@ const StaffDashboard = () => {
                         rows="4"
                         required
                       />
+                    </div>
+                    <div className="form-group">
+                      <label>Attach File (Optional)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setReplyAttachment(e.target.files[0])}
+                      />
+                      {replyAttachment && (
+                        <div style={{marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px'}}>
+                          <p>Selected: {replyAttachment.name}</p>
+                          <img 
+                            src={URL.createObjectURL(replyAttachment)} 
+                            alt="Preview" 
+                            style={{height: '80px', width: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd'}}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="form-actions">
                       <button type="button" onClick={() => setReplyingTo(null)} className="btn btn-secondary">

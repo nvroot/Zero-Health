@@ -763,6 +763,39 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'vulnerable' });
 });
 
+// Ollama setup status endpoint
+app.get('/api/ollama/status', (req, res) => {
+    const fs = require('fs');
+    try {
+        // Check if setup log exists
+        const logPath = '/tmp/ollama-setup.log';
+        if (fs.existsSync(logPath)) {
+            const log = fs.readFileSync(logPath, 'utf8');
+            const isComplete = log.includes('🎉 Ollama setup complete!');
+            const hasError = log.includes('❌');
+            
+            res.json({
+                status: isComplete ? 'ready' : hasError ? 'error' : 'setting_up',
+                log: log.split('\n').slice(-10).join('\n'), // Last 10 lines
+                provider: process.env.LLM_PROVIDER || 'ollama',
+                model: process.env.OLLAMA_MODEL || 'llama3.2:3b'
+            });
+        } else {
+            res.json({
+                status: 'unknown',
+                message: 'Setup log not found',
+                provider: process.env.LLM_PROVIDER || 'ollama'
+            });
+        }
+    } catch (error) {
+        res.json({
+            status: 'error',
+            error: error.message,
+            provider: process.env.LLM_PROVIDER || 'ollama'
+        });
+    }
+});
+
 /**
  * @swagger
  * /api/debug/token:

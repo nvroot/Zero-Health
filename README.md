@@ -93,29 +93,6 @@ User Message → Role Detection → Intent Classifier (LLM) → Action Handler (
 - **Intent Classification**: Distinguishes between conversation and action requests
 - **Permission-Based**: Role-specific data access and query generation
 
-## Security Vulnerabilities (Deliberately Vulnerable)
-
-### Traditional Web Vulnerabilities
-- 🔓 Weak authentication and authorization
-- 🕵️‍♂️ Insecure direct object references
-- ⚠️ Cross-site scripting (XSS) vulnerabilities
-- 📂 Unrestricted file uploads
-- 📡 Missing security headers
-- 🔑 Weak session management
-- 💉 SQL injection vulnerabilities
-- 🔍 Information disclosure
-- 🔐 Weak encryption
-- 📝 Insecure deserialization
-
-### AI/LLM Specific Vulnerabilities
-- 🤖 **Prompt Injection**: AI can be manipulated through crafted prompts
-- 🗄️ **SQL Injection via AI**: LLM generates vulnerable SQL queries
-- 📊 **Information Disclosure**: AI exposes database schema and internal information
-- 🔍 **Weak Access Controls**: AI bypasses intended data restrictions
-- 💬 **Conversation Manipulation**: Chat history can be exploited for context injection
-- 🎯 **Intent Classification Bypass**: Potential to trick action/conversation classification
-- 👥 **Role Escalation**: Potential to access data beyond role permissions
-
 ## Getting Started
 
 ### Prerequisites
@@ -311,41 +288,20 @@ Each role automatically routes to their appropriate dashboard:
 - Emergency guidance and contact information
 - Role-specific operational guidance
 
-## Modern UI Features
-
-### Zero Health Brand System
-- **Consistent Color Palette**: CSS custom properties throughout
-- **Professional Gradients**: Teal Zero, Deep Breach, Insecure Mint themes
-- **Modern Components**: Cards, badges, buttons with hover effects
-- **Responsive Design**: Mobile-first approach with flexible layouts
-
-### Enhanced User Experience
-- **Role-Specific Interfaces**: Different layouts and capabilities per user type
-- **Modern Animations**: Smooth transitions and loading states
-- **Interactive Elements**: Hover effects, active states, and visual feedback
-- **Professional Typography**: Consistent font scales and spacing
-
-### Landing Page Features
-- **Satirical Marketing**: Vulnerability-themed selling points with humor
-- **Modern SaaS Design**: Professional layout with contemporary elements
-- **Educational Disclaimer**: Clear warnings about intentional vulnerabilities
-- **Responsive Layout**: Mobile-optimized design with flexible components
-
 ## Security Vulnerabilities
 
 This application contains numerous deliberate security vulnerabilities for educational purposes:
 
-### Traditional Web Security Issues
+### Web Security Issues
 - Weak password hashing (only 5 bcrypt rounds)
 - SQL injection vulnerabilities in multiple endpoints
 - Cross-site scripting (XSS) in messages and lab results
 - Insecure direct object references
-- Missing security headers
 - Weak JWT secrets and configuration
 - Information disclosure through debug endpoints
 - No input validation or sanitization
 
-### AI-Specific Security Issues (ENHANCED)
+### AI-Specific Security Issues
 - **Prompt Injection Attacks**: Manipulate AI behavior through crafted messages
 - **SQL Injection via LLM**: AI generates and executes malicious SQL queries
 - **Schema Disclosure**: AI reveals complete database structure to users
@@ -371,7 +327,7 @@ By studying and exploiting the vulnerabilities in this application, you can lear
 5. Secure coding principles
 6. Healthcare-specific security considerations
 
-### AI/LLM Security Topics (ENHANCED)
+### AI/LLM Security Topics
 7. Prompt injection attack techniques and prevention
 8. Secure AI integration practices
 9. LLM-generated code security risks
@@ -385,24 +341,6 @@ By studying and exploiting the vulnerabilities in this application, you can lear
 15. XSS prevention in modern web applications
 16. Secure styling and CSS practices
 17. Role-based UI security patterns
-
-## 🚀 Recent Updates
-
-### Version 2.1 - Role-Based AI & Modern UI
-- **Role-Based Chatbot**: Different AI capabilities for patients vs staff
-- **Modern Staff Dashboard**: Professional design with Zero Health branding
-- **Enhanced Admin Portal**: Complete user management and system statistics
-- **Improved Patient Portal**: Better UX with modern styling
-- **CSS Design System**: Reusable color palette and component system
-- **SVG Medical Images**: Realistic lab result visualizations
-- **Enhanced Database**: Improved sample data with realistic medical content
-
-### Previous Updates
-- **LLM Integration**: Complete chatbot system with OpenAI GPT-4o-mini
-- **Database Consolidation**: Single users table with role-based access
-- **Conversation Persistence**: Chat history across browser sessions
-- **Smart Intent Classification**: Conservative approach to action vs. conversation
-- **Dynamic Schema Loading**: AI gets real-time database structure from init.sql
 
 ## Contributing
 

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import logo from '../assets/logo-light-bg.svg';
 
 const LandingPage = () => {
-  const [email, setEmail] = useState('');
-
   const handleGetStarted = () => {
     // Deliberately vulnerable: No validation
     window.location.href = '/register';
@@ -13,701 +11,827 @@ const LandingPage = () => {
     window.location.href = '/login';
   };
 
-  const handleTestimonialSubmit = (e) => {
-    e.preventDefault();
-    // Deliberately vulnerable: No sanitization of user input
-    const testimonialDiv = document.createElement('div');
-    testimonialDiv.className = 'testimonial';
-    testimonialDiv.innerHTML = `
-      <p>${email}</p>
-      <cite>- Anonymous User</cite>
-    `;
-    document.getElementById('testimonials').appendChild(testimonialDiv);
-    setEmail('');
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        // Deliberately vulnerable: No file type checking
-        console.log(event.target.result);
-      };
-      reader.readAsText(file);
-    }
-  };
-
   return (
     <div className="landing-page">
+      {/* Modern Navigation */}
       <nav className="navbar">
-        <div className="logo">
-          <img src={logo} alt="Zero Health Logo" className="logo-image" />
-        </div>
-        <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#testimonials">Testimonials</a>
-          <button onClick={handleLogin} className="btn btn-text">Login</button>
-          <button onClick={handleGetStarted} className="btn btn-primary">Get Started</button>
+        <div className="nav-container">
+          <div className="logo">
+            <img src={logo} alt="Zero Health Logo" className="logo-image" />
+            <span className="logo-text">Zero Health</span>
+          </div>
+          <div className="nav-links">
+            <a href="#features" className="nav-link">Features</a>
+            <a href="#testimonials" className="nav-link">Testimonials</a>
+            <button onClick={handleLogin} className="btn btn-ghost">Login</button>
+            <button onClick={handleGetStarted} className="btn btn-primary">Get Started</button>
+          </div>
         </div>
       </nav>
 
+      {/* Hero Section with Modern Layout */}
       <header className="hero">
-        <div className="hero-content">
-          <h1>Welcome to Zero Health – Your One-Stop Shop for Leaking Medical Data!</h1>
-          <p className="subtitle">Zero trust. Zero security. Total exposure.</p>
-          <div className="cta-buttons">
-            <button onClick={handleGetStarted} className="btn btn-primary">
-              Sign Up Insecurely
-            </button>
-            <button className="btn btn-secondary">
-              Watch Data Leak Demo
-            </button>
-          </div>
-          <div className="hero-stats">
-            <div className="stat">
-              <span className="stat-number">0%</span>
-              <span className="stat-label">Security Measures</span>
+        <div className="hero-container">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span>🔥 Intentionally Vulnerable</span>
             </div>
-            <div className="stat">
-              <span className="stat-number">100%</span>
-              <span className="stat-label">Data Exposure</span>
+            <h1 className="hero-title">
+              Welcome to <span className="gradient-text">Zero Health</span> – Your One-Stop Shop for Leaking Medical Data!
+            </h1>
+            <p className="hero-subtitle">
+              Zero trust. Zero security. Total exposure. The future of healthcare has never been so wonderfully broken.
+            </p>
+            <div className="hero-cta">
+              <button onClick={handleGetStarted} className="btn btn-primary btn-large">
+                <span>Sign Up Insecurely</span>
+                <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
             </div>
-            <div className="stat">
-              <span className="stat-number">∞</span>
-              <span className="stat-label">Vulnerabilities</span>
+            <div className="hero-stats">
+              <div className="stat-card">
+                <div className="stat-number">0%</div>
+                <div className="stat-label">Security Measures</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">100%</div>
+                <div className="stat-label">Data Exposure</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">∞</div>
+                <div className="stat-label">Vulnerabilities</div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="hero-image">
-          <div className="floating-card card-1">
-            <span>🔓 Plaintext Data</span>
-          </div>
-          <div className="floating-card card-2">
-            <span>⚠️ XSS Ready</span>
-          </div>
-          <div className="floating-card card-3">
-            <span>📡 No HTTPS</span>
+          <div className="hero-visual">
+            <div className="floating-cards">
+              <div className="floating-card card-1">
+                <div className="card-icon">🔓</div>
+                <div className="card-text">Plaintext Data</div>
+              </div>
+              <div className="floating-card card-2">
+                <div className="card-icon">⚠️</div>
+                <div className="card-text">XSS Ready</div>
+              </div>
+              <div className="floating-card card-3">
+                <div className="card-icon">📡</div>
+                <div className="card-text">No HTTPS</div>
+              </div>
+            </div>
+            <div className="hero-gradient-orb"></div>
           </div>
         </div>
       </header>
 
+      {/* Modern Features Section */}
       <section id="features" className="features">
-        <h2>Why Choose Zero Health?</h2>
-        <div className="feature-grid">
-          <div className="feature-card">
-            <div className="feature-icon">🔓</div>
-            <h3>Zero Authentication Friction</h3>
-            <p>We skip identity verification, so anyone can pretend to be you!</p>
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">Why Choose Zero Health?</h2>
+            <p className="section-subtitle">Experience the most beautifully broken healthcare platform ever created</p>
           </div>
-          <div className="feature-card">
-            <div className="feature-icon">🕵️‍♂️</div>
-            <h3>Open Medical Records</h3>
-            <p>Tired of logging in? Just guess the ID in the URL!</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">⚠️</div>
-            <h3>XSS Chatbot</h3>
-            <p>Inject your personality—and scripts—into every conversation.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">📂</div>
-            <h3>File Upload Freedom</h3>
-            <p>No pesky MIME checks. Upload whatever you want!</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">📡</div>
-            <h3>No HTTPS Needed</h3>
-            <p>We believe in open communication. Very open.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">🔐</div>
-            <h3>Security Promise</h3>
-            <p>We store your data in plaintext, just like Grandma used to. Zero encryption, zero worries!</p>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon danger">🔓</div>
+                <h3>Zero Authentication Friction</h3>
+              </div>
+              <p>We skip identity verification, so anyone can pretend to be you! Healthcare access has never been easier.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon warning">🕵️‍♂️</div>
+                <h3>Open Medical Records</h3>
+              </div>
+              <p>Tired of logging in? Just guess the ID in the URL! Your neighbor's cancer results are just a click away.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon danger">⚠️</div>
+                <h3>XSS Chatbot</h3>
+              </div>
+              <p>Inject your personality—and scripts—into every conversation. Our AI assistant loves user input!</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon info">📂</div>
+                <h3>File Upload Freedom</h3>
+              </div>
+              <p>No pesky MIME checks. Upload whatever you want! Executables welcome in our medical records system.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon warning">📡</div>
+                <h3>No HTTPS Needed</h3>
+              </div>
+              <p>We believe in open communication. Very open. Your data travels the internet like it's 1995!</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-header">
+                <div className="feature-icon danger">🔐</div>
+                <h3>Security Promise</h3>
+              </div>
+              <p>We store your data in plaintext, just like Grandma used to. Zero encryption, zero worries, infinite possibilities!</p>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Modern Testimonials Section */}
       <section id="testimonials" className="testimonials">
-        <h2>What Our Users Say</h2>
-        <div id="testimonials" className="testimonial-container">
-          <div className="testimonial">
-            <div className="testimonial-content">
-              <p>"I accessed my neighbor's cancer history in two clicks. Incredible!"</p>
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">What Our Users Say</h2>
+            <p className="section-subtitle">Real feedback from our security-conscious community</p>
+          </div>
+          <div className="testimonials-grid">
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">💬</div>
+                <p>"I accessed my neighbor's cancer history in two clicks. The UI is so intuitive for medical voyeurism!"</p>
+              </div>
               <div className="testimonial-author">
+                <div className="author-avatar">K</div>
                 <div className="author-info">
-                  <strong>Karen M.</strong>
-                  <span>Aspiring Cybercriminal</span>
+                  <div className="author-name">Karen M.</div>
+                  <div className="author-role">Aspiring Cybercriminal</div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="testimonial">
-            <div className="testimonial-content">
-              <p>"Zero Health is the future of bad software."</p>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">🔍</div>
+                <p>"Zero Health is the future of bad software. I've never seen such beautiful vulnerabilities in healthcare!"</p>
+              </div>
               <div className="testimonial-author">
+                <div className="author-avatar">D</div>
                 <div className="author-info">
-                  <strong>Dr. Exploit</strong>
-                  <span>Ethical Hacker</span>
+                  <div className="author-name">Dr. Exploit</div>
+                  <div className="author-role">Ethical Hacker</div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="testimonial">
-            <div className="testimonial-content">
-              <p>"I sent my doctor a meme. The entire site broke. 10/10."</p>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <div className="quote-icon">💥</div>
+                <p>"I sent my doctor a meme through the chat. The entire site broke. 10/10 would hack again!"</p>
+              </div>
               <div className="testimonial-author">
+                <div className="author-avatar">3</div>
                 <div className="author-info">
-                  <strong>Patient #314</strong>
-                  <span>XSS Enthusiast</span>
+                  <div className="author-name">Patient #314</div>
+                  <div className="author-role">XSS Enthusiast</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <form onSubmit={handleTestimonialSubmit} className="testimonial-form">
-          <h3>Share Your Exploit</h3>
-          <textarea
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Tell us how you broke our security..."
-            className="testimonial-input"
-          />
-          <button type="submit" className="btn btn-primary">Submit Exploit</button>
-        </form>
       </section>
 
-      <section className="file-upload">
-        <div className="upload-container">
-          <h2>Upload Your Medical Records</h2>
-          <p>No security checks. No validation. Just pure, unadulterated data exposure.</p>
-          <div className="trust-badges">
-            <span className="badge">Totally Unverified App</span>
-            <span className="badge">HIPAA Non-Compliant Certified</span>
-            <span className="badge">Zero-Trust (Not Implemented)</span>
-          </div>
-          <div className="upload-box">
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              className="file-input"
-              id="file-upload"
-            />
-            <label htmlFor="file-upload" className="upload-label">
-              <span className="upload-icon">📁</span>
-              <span>Drag & Drop or Click to Upload</span>
-            </label>
-          </div>
-        </div>
-      </section>
-
+      {/* Modern Footer */}
       <footer className="footer">
-        <div className="footer-content">
-          <p className="disclaimer">
-            Warning: This app is intentionally insecure and for educational use only. 
-            Do not upload real data. Do not use in production. Don't say we didn't warn you.
-          </p>
-          <div className="buzzwords">
-            <span>AI-powered</span>
-            <span>•</span>
-            <span>Blockchain-ready</span>
-            <span>•</span>
-            <span>Zero-trust (except we forgot to implement it)</span>
+        <div className="footer-container">
+          <div className="footer-content">
+            <div className="footer-logo">
+              <img src={logo} alt="Zero Health Logo" className="footer-logo-image" />
+              <span className="footer-logo-text">Zero Health</span>
+            </div>
+            <div className="footer-disclaimer">
+              <div className="warning-badge">
+                <span>⚠️ Educational Use Only</span>
+              </div>
+              <p>This app is intentionally insecure and for educational use only. Do not upload real data. Do not use in production. Don't say we didn't warn you.</p>
+            </div>
+            <div className="footer-features">
+              <div className="feature-badge">AI-powered</div>
+              <div className="feature-badge">Blockchain-ready</div>
+              <div className="feature-badge">Zero-trust (except we forgot to implement it)</div>
+            </div>
           </div>
         </div>
       </footer>
 
       <style jsx>{`
         .landing-page {
-          max-width: 100%;
-          margin: 0;
-          padding: 0;
+          min-height: 100vh;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          color: #1a1a1a;
-          background: #ffffff;
+          color: var(--color-deep-breach);
+          background: var(--gradient-background-light);
+          overflow-x: hidden;
         }
 
+        /* Modern Navigation */
         .navbar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1.5rem 5%;
-          background: white;
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           z-index: 1000;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--color-teal-zero-20);
+        }
+
+        .nav-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 2rem;
         }
 
         .logo {
-          font-size: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .logo-image {
+          height: 32px;
+          width: auto;
+        }
+
+        .logo-text {
+          font-size: 1.25rem;
           font-weight: 700;
-        }
-
-        .nav-links {
-          display: flex;
-          gap: 2rem;
-          align-items: center;
-        }
-
-        .nav-links a {
-          text-decoration: none;
-          color: #4b5563;
-          font-weight: 500;
-          transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-          color: #2563eb;
-        }
-
-        .hero {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          min-height: 100vh;
-          padding: 0 5%;
-          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .hero-content {
-          max-width: 600px;
-          z-index: 1;
-        }
-
-        .hero h1 {
-          font-size: 4rem;
-          font-weight: 800;
-          line-height: 1.2;
-          margin-bottom: 1.5rem;
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+          background: var(--gradient-primary);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
 
-        .subtitle {
-          font-size: 1.5rem;
-          color: #4b5563;
-          margin-bottom: 2.5rem;
-          line-height: 1.6;
-        }
-
-        .cta-buttons {
+        .nav-links {
           display: flex;
-          gap: 1rem;
-          margin-bottom: 3rem;
+          align-items: center;
+          gap: 2rem;
         }
 
-        .btn {
-          padding: 1rem 2rem;
-          border: none;
+        .nav-link {
+          text-decoration: none;
+          color: var(--color-obscure-note);
+          font-weight: 500;
+          padding: 0.5rem 1rem;
           border-radius: 0.5rem;
-          font-size: 1rem;
+          transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+          color: var(--color-teal-zero);
+          background: var(--color-teal-zero-10);
+        }
+
+        /* Modern Buttons */
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 0.75rem;
+          font-size: 0.95rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
+          text-decoration: none;
         }
 
         .btn-primary {
-          background: #2563eb;
+          background: var(--gradient-cta);
           color: white;
+          box-shadow: var(--shadow-teal);
         }
 
         .btn-primary:hover {
-          background: #1d4ed8;
           transform: translateY(-2px);
+          box-shadow: var(--shadow-teal-hover);
         }
 
-        .btn-secondary {
-          background: white;
-          color: #2563eb;
-          border: 2px solid #2563eb;
+        .btn-large {
+          padding: 1rem 2rem;
+          font-size: 1.1rem;
         }
 
-        .btn-secondary:hover {
-          background: #f8fafc;
-          transform: translateY(-2px);
+        .btn-ghost {
+          background: transparent;
+          color: var(--color-obscure-note);
+          border: 1px solid var(--color-obscure-note-30);
         }
 
-        .btn-text {
-          background: none;
-          color: #4b5563;
+        .btn-ghost:hover {
+          background: var(--color-foggy-records);
+          border-color: var(--color-teal-zero);
+          color: var(--color-teal-zero);
+        }
+
+        .btn-icon {
+          width: 18px;
+          height: 18px;
+        }
+
+        /* Hero Section */
+        .hero {
+          padding: 8rem 2rem 6rem;
+          background: var(--gradient-hero);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hero-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          align-items: center;
+          gap: 4rem;
+        }
+
+        .hero-content {
+          max-width: 600px;
+        }
+
+        .hero-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          background: linear-gradient(135deg, var(--color-breach-red-10) 0%, var(--color-yellow-flag-10) 100%);
+          border: 1px solid var(--color-breach-red);
+          border-radius: 2rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--color-breach-red);
+          margin-bottom: 2rem;
+        }
+
+        .hero-title {
+          font-size: 3.5rem;
+          font-weight: 900;
+          line-height: 1.1;
+          margin-bottom: 1.5rem;
+          color: var(--color-deep-breach);
+        }
+
+        .gradient-text {
+          background: var(--gradient-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+          font-size: 1.25rem;
+          color: var(--color-obscure-note);
+          line-height: 1.6;
+          margin-bottom: 2.5rem;
+        }
+
+        .hero-cta {
+          margin-bottom: 3rem;
         }
 
         .hero-stats {
           display: flex;
-          gap: 3rem;
+          gap: 2rem;
         }
 
-        .stat {
-          display: flex;
-          flex-direction: column;
+        .stat-card {
+          text-align: center;
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 1rem;
+          backdrop-filter: blur(8px);
+          border: 1px solid var(--color-teal-zero-20);
         }
 
         .stat-number {
-          font-size: 2rem;
-          font-weight: 700;
-          color: #2563eb;
+          font-size: 2.25rem;
+          font-weight: 800;
+          background: var(--gradient-danger);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          display: block;
         }
 
         .stat-label {
           font-size: 0.875rem;
-          color: #6b7280;
+          color: var(--color-obscure-note);
+          font-weight: 500;
         }
 
-        .hero-image {
+        /* Hero Visual */
+        .hero-visual {
           position: relative;
-          width: 500px;
           height: 500px;
+        }
+
+        .floating-cards {
+          position: relative;
+          height: 100%;
         }
 
         .floating-card {
           position: absolute;
-          background: white;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(12px);
           padding: 1.5rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          border-radius: 1.5rem;
+          border: 1px solid var(--color-teal-zero-20);
+          box-shadow: var(--shadow-card);
           animation: float 6s ease-in-out infinite;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .card-icon {
+          font-size: 1.5rem;
+        }
+
+        .card-text {
+          font-weight: 600;
+          color: var(--color-deep-breach);
         }
 
         .card-1 {
-          top: 20%;
+          top: 10%;
           left: 0;
           animation-delay: 0s;
         }
 
         .card-2 {
-          top: 40%;
-          right: 0;
+          top: 35%;
+          right: 10%;
           animation-delay: 2s;
         }
 
         .card-3 {
-          bottom: 20%;
-          left: 20%;
+          bottom: 15%;
+          left: 15%;
           animation-delay: 4s;
         }
 
+        .hero-gradient-orb {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 300px;
+          height: 300px;
+          background: linear-gradient(135deg, var(--color-teal-zero), var(--color-insecure-mint), var(--color-breach-red));
+          border-radius: 50%;
+          opacity: 0.1;
+          blur: 100px;
+          animation: pulse 4s ease-in-out infinite;
+        }
+
         @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-          100% { transform: translateY(0px); }
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(1deg); }
         }
 
-        .features {
-          padding: 8rem 5%;
-          background: white;
+        @keyframes pulse {
+          0%, 100% { opacity: 0.1; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 0.2; transform: translate(-50%, -50%) scale(1.1); }
         }
 
-        .features h2 {
+        /* Sections */
+        .section-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 2rem;
+        }
+
+        .section-header {
           text-align: center;
-          font-size: 2.5rem;
-          font-weight: 700;
           margin-bottom: 4rem;
-          color: #1a1a1a;
         }
 
-        .feature-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-          gap: 2rem;
-          max-width: 1200px;
+        .section-title {
+          font-size: 2.75rem;
+          font-weight: 800;
+          margin-bottom: 1rem;
+          background: var(--gradient-text-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+          font-size: 1.125rem;
+          color: var(--color-obscure-note);
+          max-width: 600px;
           margin: 0 auto;
         }
 
+        /* Features Section */
+        .features {
+          padding: 6rem 0;
+          background: white;
+        }
+
+        .features-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+          gap: 2rem;
+        }
+
         .feature-card {
+          background: linear-gradient(135deg, #ffffff 0%, var(--color-foggy-records) 100%);
+          border: 1px solid var(--color-teal-zero-20);
+          border-radius: 1.5rem;
           padding: 2rem;
-          background: #f8fafc;
-          border-radius: 1rem;
           transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .feature-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, transparent 0%, var(--color-breach-red) 50%, transparent 100%);
+          opacity: 0;
+          transition: opacity 0.3s ease;
         }
 
         .feature-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          transform: translateY(-8px);
+          box-shadow: var(--shadow-elevated);
+          border-color: var(--color-teal-zero);
+        }
+
+        .feature-card:hover::before {
+          opacity: 1;
+        }
+
+        .feature-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 1rem;
         }
 
         .feature-icon {
-          font-size: 2rem;
-          margin-bottom: 1rem;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+        }
+
+        .feature-icon.danger {
+          background: linear-gradient(135deg, var(--color-breach-red-10) 0%, var(--color-breach-red-20) 100%);
+          border: 1px solid var(--color-breach-red-30);
+          color: var(--color-breach-red);
+        }
+
+        .feature-icon.warning {
+          background: linear-gradient(135deg, var(--color-yellow-flag-10) 0%, var(--color-yellow-flag-20) 100%);
+          border: 1px solid var(--color-yellow-flag-30);
+          color: var(--color-yellow-flag);
+        }
+
+        .feature-icon.info {
+          background: linear-gradient(135deg, var(--color-teal-zero-10) 0%, var(--color-insecure-mint-10) 100%);
+          border: 1px solid var(--color-teal-zero-30);
+          color: var(--color-teal-zero);
         }
 
         .feature-card h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          color: #1a1a1a;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--color-deep-breach);
+          margin: 0;
         }
 
         .feature-card p {
-          color: #6b7280;
+          color: var(--color-obscure-note);
           line-height: 1.6;
+          margin: 0;
         }
 
+        /* Testimonials Section */
         .testimonials {
-          padding: 8rem 5%;
-          background: #f8fafc;
+          padding: 6rem 0;
+          background: linear-gradient(135deg, var(--color-foggy-records) 0%, var(--color-teal-zero-10) 100%);
         }
 
-        .testimonials h2 {
-          text-align: center;
-          font-size: 2.5rem;
-          font-weight: 700;
-          margin-bottom: 4rem;
-          color: #1a1a1a;
-        }
-
-        .testimonial-container {
+        .testimonials-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
           gap: 2rem;
-          max-width: 1200px;
-          margin: 0 auto 4rem;
         }
 
-        .testimonial {
-          background: white;
-          border-radius: 1rem;
+        .testimonial-card {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(12px);
+          border: 1px solid var(--color-teal-zero-20);
+          border-radius: 1.5rem;
           padding: 2rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-card-hover);
+          border-color: var(--color-teal-zero);
+        }
+
+        .testimonial-content {
+          margin-bottom: 1.5rem;
+        }
+
+        .quote-icon {
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+          display: block;
         }
 
         .testimonial-content p {
-          font-size: 1.125rem;
+          font-size: 1.1rem;
           line-height: 1.6;
-          color: #4b5563;
-          margin-bottom: 1.5rem;
+          color: var(--color-deep-breach);
+          margin: 0;
+          font-style: italic;
         }
 
         .testimonial-author {
           display: flex;
           align-items: center;
-        }
-
-        .author-info {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .author-info strong {
-          color: #1a1a1a;
-          font-weight: 600;
-        }
-
-        .author-info span {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .testimonial-form {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 3rem;
-          background: white;
-          border-radius: 1rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .testimonial-form h3 {
-          text-align: center;
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 2rem;
-          color: #1a1a1a;
-        }
-
-        .testimonial-input {
-          width: 100%;
-          min-height: 120px;
-          padding: 1rem;
-          border: 2px solid #e5e7eb;
-          border-radius: 0.5rem;
-          font-size: 1rem;
-          resize: vertical;
-          margin-bottom: 1.5rem;
-          transition: border-color 0.3s ease;
-        }
-
-        .testimonial-input:focus {
-          outline: none;
-          border-color: #2563eb;
-        }
-
-        .file-upload {
-          padding: 8rem 5%;
-          background: white;
-        }
-
-        .upload-container {
-          max-width: 800px;
-          margin: 0 auto;
-          text-align: center;
-        }
-
-        .upload-container h2 {
-          font-size: 2.5rem;
-          font-weight: 700;
-          margin-bottom: 1rem;
-          color: #1a1a1a;
-        }
-
-        .upload-container p {
-          color: #6b7280;
-          margin-bottom: 2rem;
-        }
-
-        .upload-box {
-          border: 2px dashed #e5e7eb;
-          border-radius: 1rem;
-          padding: 3rem;
-          margin-bottom: 2rem;
-          transition: all 0.3s ease;
-        }
-
-        .upload-box:hover {
-          border-color: #2563eb;
-          background: #f8fafc;
-        }
-
-        .file-input {
-          display: none;
-        }
-
-        .upload-label {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
           gap: 1rem;
-          cursor: pointer;
         }
 
-        .upload-icon {
-          font-size: 2rem;
-        }
-
-        .file-preview {
-          margin-top: 2rem;
-          padding: 2rem;
-          background: #f8fafc;
-          border-radius: 1rem;
-          text-align: left;
-        }
-
-        .file-preview h3 {
+        .author-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: var(--gradient-primary);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
           font-size: 1.25rem;
+        }
+
+        .author-name {
           font-weight: 600;
+          color: var(--color-deep-breach);
+        }
+
+        .author-role {
+          font-size: 0.875rem;
+          color: var(--color-obscure-note);
+        }
+
+        /* Footer */
+        .footer {
+          background: linear-gradient(135deg, var(--color-deep-breach) 0%, #1a3f56 100%);
+          color: white;
+          padding: 4rem 0 2rem;
+        }
+
+        .footer-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 2rem;
+        }
+
+        .footer-content {
+          display: grid;
+          grid-template-columns: 1fr 2fr 1fr;
+          gap: 3rem;
+          align-items: start;
+        }
+
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .footer-logo-image {
+          height: 32px;
+          width: auto;
+          filter: brightness(0) invert(1);
+        }
+
+        .footer-logo-text {
+          font-size: 1.25rem;
+          font-weight: 700;
+          background: var(--gradient-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .footer-disclaimer {
+          text-align: center;
+        }
+
+        .warning-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          background: var(--color-breach-red-20);
+          border: 1px solid var(--color-breach-red);
+          border-radius: 2rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--color-breach-red);
           margin-bottom: 1rem;
-          color: #1a1a1a;
         }
 
-        .file-preview pre {
-          background: white;
-          padding: 1rem;
+        .footer-disclaimer p {
+          color: var(--color-obscure-note);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .footer-features {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .feature-badge {
+          padding: 0.5rem 1rem;
+          background: var(--color-teal-zero-20);
+          border: 1px solid var(--color-teal-zero-30);
           border-radius: 0.5rem;
-          border: 1px solid #e5e7eb;
-          overflow-x: auto;
+          font-size: 0.875rem;
+          text-align: center;
+          color: var(--color-teal-zero);
         }
 
+        /* Responsive Design */
         @media (max-width: 1024px) {
-          .hero {
-            flex-direction: column;
+          .hero-container {
+            grid-template-columns: 1fr;
             text-align: center;
-            padding-top: 6rem;
+            gap: 3rem;
           }
 
-          .hero-content {
-            margin-bottom: 4rem;
+          .hero-title {
+            font-size: 2.75rem;
           }
 
-          .hero-stats {
-            justify-content: center;
+          .features-grid {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
           }
 
-          .hero-image {
-            width: 100%;
-            height: 400px;
+          .footer-content {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 2rem;
           }
         }
 
         @media (max-width: 768px) {
-          .navbar {
-            padding: 1rem 5%;
+          .nav-container {
+            padding: 1rem;
           }
 
           .nav-links {
+            gap: 1rem;
+          }
+
+          .nav-link {
             display: none;
           }
 
-          .hero h1 {
-            font-size: 2.5rem;
+          .hero {
+            padding: 6rem 1rem 4rem;
           }
 
-          .subtitle {
-            font-size: 1.25rem;
+          .hero-title {
+            font-size: 2.25rem;
           }
 
-          .cta-buttons {
-            flex-direction: column;
+          .hero-subtitle {
+            font-size: 1.125rem;
           }
 
           .hero-stats {
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
           }
 
-          .feature-grid {
+          .section-container {
+            padding: 0 1rem;
+          }
+
+          .section-title {
+            font-size: 2.25rem;
+          }
+
+          .features-grid,
+          .testimonials-grid {
             grid-template-columns: 1fr;
           }
-        }
-
-        .trust-badges {
-          display: flex;
-          gap: 1rem;
-          justify-content: center;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-        }
-
-        .badge {
-          padding: 0.5rem 1rem;
-          background: #f3f4f6;
-          border-radius: 2rem;
-          font-size: 0.875rem;
-          color: #4b5563;
-          border: 1px dashed #9ca3af;
-        }
-
-        .footer {
-          background: #f8fafc;
-          padding: 3rem 5%;
-          text-align: center;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .footer-content {
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .disclaimer {
-          color: #ef4444;
-          font-size: 0.875rem;
-          margin-bottom: 1.5rem;
-          line-height: 1.6;
-        }
-
-        .buzzwords {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .buzzwords span {
-          margin: 0 0.5rem;
         }
       `}</style>
     </div>

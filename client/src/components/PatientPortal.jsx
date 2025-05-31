@@ -216,8 +216,8 @@ const PatientPortal = () => {
               animation: 'spin 1s linear infinite',
               margin: '0 auto 20px'
             }}></div>
-            <h2 style={{ color: '#6c757d', fontWeight: '500', fontSize: '18px' }}>Loading Patient Portal...</h2>
-            <p style={{ color: '#6c757d', fontSize: '14px', marginTop: '8px' }}>Please wait while we fetch your medical data</p>
+            <h2 style={{ color: 'var(--color-obscure-note)', fontWeight: '500', fontSize: '18px' }}>Loading Patient Portal...</h2>
+            <p style={{ color: 'var(--color-obscure-note)', fontSize: '14px', marginTop: '8px' }}>Please wait while we fetch your medical data</p>
           </div>
         </div>
       </div>
@@ -381,7 +381,7 @@ const PatientPortal = () => {
                             <button
                               onClick={() => window.open(`http://localhost:5000/uploads/${result.file_path}`, '_blank')}
                               style={{
-                                background: '#007bff',
+                                background: 'var(--color-teal-zero)',
                                 color: 'white',
                                 border: 'none',
                                 padding: '4px 8px',
@@ -485,7 +485,7 @@ const PatientPortal = () => {
 
             <div className="messages-container">
               {messages.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#6c757d', padding: '40px 20px' }}>
+                <div style={{ textAlign: 'center', color: 'var(--color-obscure-note)', padding: '40px 20px' }}>
                   <p style={{ fontSize: '16px' }}>No messages yet</p>
                   <p style={{ fontSize: '14px', marginTop: '8px' }}>Start a conversation with your healthcare provider</p>
                 </div>

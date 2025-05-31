@@ -55,6 +55,12 @@ export OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional: defaults to Open
 docker-compose up --build
 ```
 
+**Note** You may need to run docker-compose with sudo, and this may lead to environment variables not being passed from the shell. If you're having issues with the chatbot, try this:
+
+```bash
+OPENAI_API_KEY=$OPENAI_API_KEY docker-compose up --build
+```
+
 ### 4. Access Application
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000

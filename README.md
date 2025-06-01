@@ -24,6 +24,8 @@ This educational platform demonstrates:
 
 ## Quick Setup
 
+I made a [Demo Video](https://youtu.be/h3jm83jw33Q) explaining everything.
+
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/yourusername/zero-health.git

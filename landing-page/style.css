@@ -769,4 +769,126 @@ body {
     width: 100%;
     max-width: 280px;
   }
+}
+
+/* Security Challenges Section */
+.challenges {
+  padding: 5rem 0;
+  background: linear-gradient(135deg, var(--color-teal-zero-10) 0%, var(--color-background-gray) 100%);
+}
+
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.challenge-category {
+  background: var(--color-background-light);
+  border: 2px solid var(--color-border-light);
+  border-radius: 16px;
+  padding: 2.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.challenge-category::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.challenge-category:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-card);
+  border-color: var(--color-teal-zero);
+}
+
+.challenge-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.difficulty-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 2px solid;
+  white-space: nowrap;
+}
+
+.difficulty-badge.beginner {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border-color: #4caf50;
+}
+
+.difficulty-badge.intermediate {
+  background: #fff8e1;
+  color: #f57c00;
+  border-color: #ff9800;
+}
+
+.difficulty-badge.advanced {
+  background: #ffebee;
+  color: #c62828;
+  border-color: #f44336;
+}
+
+.challenge-category h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.challenge-category > p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.challenge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.challenge-item {
+  padding: 0.75rem 1rem;
+  background: var(--color-teal-zero-10);
+  border: 1px solid var(--color-teal-zero-20);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  font-size: 0.95rem;
+}
+
+.challenge-item::before {
+  content: '🎯';
+  margin-right: 0.5rem;
+}
+
+.challenge-item:hover {
+  background: var(--color-teal-zero-20);
+  border-color: var(--color-teal-zero);
+  transform: translateX(4px);
+}
+
+.challenges-cta {
+  text-align: center;
 } 

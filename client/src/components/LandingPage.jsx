@@ -171,6 +171,68 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Security Challenges Section */}
+      <section className="challenges">
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">Security Challenges</h2>
+            <p className="section-subtitle">Test your skills with our hands-on security challenges</p>
+          </div>
+          <div className="challenges-grid">
+            <div className="challenge-category">
+              <div className="challenge-header">
+                <div className="difficulty-badge beginner">🟢 Beginner</div>
+                <h3>Getting Started</h3>
+              </div>
+              <p>Perfect for those new to web application security</p>
+              <div className="challenge-list">
+                <div className="challenge-item">Information Disclosure</div>
+                <div className="challenge-item">SQL Injection Basics</div>
+                <div className="challenge-item">IDOR Vulnerabilities</div>
+                <div className="challenge-item">Reflected XSS</div>
+                <div className="challenge-item">File Upload Bypass</div>
+              </div>
+            </div>
+            <div className="challenge-category">
+              <div className="challenge-header">
+                <div className="difficulty-badge intermediate">🟡 Intermediate</div>
+                <h3>Level Up</h3>
+              </div>
+              <p>For those ready to tackle more complex vulnerabilities</p>
+              <div className="challenge-list">
+                <div className="challenge-item">Stored XSS Attacks</div>
+                <div className="challenge-item">JWT Manipulation</div>
+                <div className="challenge-item">AI Chatbot Exploitation</div>
+                <div className="challenge-item">Parameter Pollution</div>
+                <div className="challenge-item">Rate Limiting Bypass</div>
+              </div>
+            </div>
+            <div className="challenge-category">
+              <div className="challenge-header">
+                <div className="difficulty-badge advanced">🔴 Advanced</div>
+                <h3>Expert Mode</h3>
+              </div>
+              <p>Complex multi-step attacks for security professionals</p>
+              <div className="challenge-list">
+                <div className="challenge-item">AI Prompt Injection</div>
+                <div className="challenge-item">XXE to RCE</div>
+                <div className="challenge-item">Command Injection</div>
+                <div className="challenge-item">Attack Chaining</div>
+                <div className="challenge-item">Zero-Day Discovery</div>
+              </div>
+            </div>
+          </div>
+          <div className="challenges-cta">
+            <a href="https://github.com/aligorithm/zero-health/blob/main/challenges.md" target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-large">
+              <span>View All Challenges</span>
+              <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Modern Testimonials Section */}
       <section id="testimonials" className="testimonials">
         <div className="section-container">
@@ -865,6 +927,123 @@ const LandingPage = () => {
           color: var(--color-deep-breach);
           line-height: 1.5;
           font-weight: 500;
+        }
+
+        /* Security Challenges Section */
+        .challenges {
+          padding: 6rem 0;
+          background: linear-gradient(135deg, var(--color-teal-zero-10) 0%, var(--color-foggy-records) 100%);
+        }
+
+        .challenges-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 2rem;
+          margin-bottom: 3rem;
+        }
+
+        .challenge-category {
+          background: rgba(255, 255, 255, 0.95);
+          border: 2px solid var(--color-teal-zero-30);
+          border-radius: 1.5rem;
+          padding: 2rem;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .challenge-category::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: var(--gradient-primary);
+        }
+
+        .challenge-category:hover {
+          transform: translateY(-8px);
+          box-shadow: var(--shadow-elevated);
+          border-color: var(--color-teal-zero);
+        }
+
+        .challenge-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .difficulty-badge {
+          padding: 0.5rem 1rem;
+          border-radius: 2rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          border: 2px solid;
+        }
+
+        .difficulty-badge.beginner {
+          background: #e8f5e8;
+          color: #2e7d32;
+          border-color: #4caf50;
+        }
+
+        .difficulty-badge.intermediate {
+          background: #fff8e1;
+          color: #f57c00;
+          border-color: #ff9800;
+        }
+
+        .difficulty-badge.advanced {
+          background: #ffebee;
+          color: #c62828;
+          border-color: #f44336;
+        }
+
+        .challenge-category h3 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--color-deep-breach);
+          margin: 0;
+        }
+
+        .challenge-category > p {
+          color: var(--color-obscure-note);
+          line-height: 1.6;
+          margin-bottom: 1.5rem;
+        }
+
+        .challenge-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .challenge-item {
+          padding: 0.75rem 1rem;
+          background: var(--color-teal-zero-10);
+          border: 1px solid var(--color-teal-zero-20);
+          border-radius: 0.75rem;
+          color: var(--color-deep-breach);
+          font-weight: 500;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .challenge-item::before {
+          content: '🎯';
+          margin-right: 0.5rem;
+        }
+
+        .challenge-item:hover {
+          background: var(--color-teal-zero-20);
+          border-color: var(--color-teal-zero);
+          transform: translateX(4px);
+        }
+
+        .challenges-cta {
+          text-align: center;
         }
 
         /* Responsive Design */

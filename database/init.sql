@@ -31,6 +31,18 @@ CREATE TABLE medical_records (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create medical_history table for XML import (XXE vulnerability)
+CREATE TABLE medical_history (
+    id SERIAL PRIMARY KEY,
+    patient_id INTEGER REFERENCES users(id),
+    conditions TEXT, -- Stores processed XML content (XSS vulnerable)
+    medications TEXT, -- Stores processed XML content (XSS vulnerable)
+    allergies TEXT, -- Stores processed XML content (XSS vulnerable)
+    import_date TIMESTAMP,
+    imported_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create appointments table
 CREATE TABLE appointments (
     id SERIAL PRIMARY KEY, -- Predictable IDs
@@ -39,7 +51,8 @@ CREATE TABLE appointments (
     appointment_date TIMESTAMP,
     status VARCHAR(20), -- No enum type for status validation
     reason TEXT, -- Added reason field for appointment booking
-    notes TEXT,
+    notes TEXT, -- Doctor notes (stored XSS vulnerable)
+    patient_feedback TEXT, -- Patient feedback (stored XSS vulnerable)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -78,8 +91,9 @@ CREATE TABLE messages (
     sender_id INTEGER REFERENCES users(id),
     recipient_id INTEGER REFERENCES users(id),
     subject VARCHAR(255),
-    content TEXT, -- No XSS protection
+    content TEXT, -- No XSS protection (stored XSS vulnerable)
     attachment_path TEXT, -- Added field for image attachments
+    message_type VARCHAR(50) DEFAULT 'general', -- general, appointment, prescription, etc.
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT FALSE
 );
@@ -97,6 +111,7 @@ CREATE TABLE chat_history (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_chat_history_user_id ON chat_history(user_id);
+CREATE INDEX idx_medical_history_patient_id ON medical_history(patient_id);
 
 -- Grant excessive permissions (deliberately weak)
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;

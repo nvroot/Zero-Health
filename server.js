@@ -404,21 +404,69 @@ app.get('/api/appointments', verifyToken, async (req, res) => {
 
 app.post('/api/appointments', verifyToken, async (req, res) => {
     try {
-        const { doctor_id, appointment_date, reason } = req.body;
+        const { doctor_id, appointment_date, reason, notes } = req.body;
         const patient_id = req.user.id;
         
-        // Use parameterized query to avoid SQL injection
+        // Stored XSS vulnerability - notes are stored without sanitization
         const result = await pool.query(
-            `INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason) 
-             VALUES ($1, $2, $3, $4) 
+            `INSERT INTO appointments (patient_id, doctor_id, appointment_date, reason, notes) 
+             VALUES ($1, $2, $3, $4, $5) 
              RETURNING *`,
-            [patient_id, doctor_id, appointment_date, reason]
+            [patient_id, doctor_id, appointment_date, reason, notes || '']
         );
         
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Create appointment error:', error);
         res.status(500).json({ error: 'Failed to create appointment' });
+    }
+});
+
+// ===== APPOINTMENT NOTES UPDATE - Stored XSS vulnerability =====
+app.put('/api/appointments/:id/notes', verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { notes, patient_feedback } = req.body;
+        const userId = req.user.id;
+        
+        // Check if user can update this appointment
+        const appointmentCheck = await pool.query(
+            'SELECT * FROM appointments WHERE id = $1',
+            [id]
+        );
+        
+        if (appointmentCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+        
+        const appointment = appointmentCheck.rows[0];
+        
+        // Allow patients to add feedback, doctors to add notes
+        if (req.user.role === 'patient' && appointment.patient_id !== userId) {
+            return res.status(403).json({ error: 'Access denied' });
+        } else if (req.user.role === 'doctor' && appointment.doctor_id !== userId) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        let updateQuery = '';
+        let updateValues = [];
+        
+        if (req.user.role === 'patient') {
+            // Patients can add feedback - stored XSS vulnerability
+            updateQuery = `UPDATE appointments SET patient_feedback = $1 WHERE id = $2 RETURNING *`;
+            updateValues = [patient_feedback, id];
+        } else if (req.user.role === 'doctor' || req.user.role === 'admin') {
+            // Doctors can update notes - stored XSS vulnerability
+            updateQuery = `UPDATE appointments SET notes = $1 WHERE id = $2 RETURNING *`;
+            updateValues = [notes, id];
+        }
+        
+        const result = await pool.query(updateQuery, updateValues);
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Update appointment notes error:', error);
+        res.status(500).json({ error: 'Failed to update appointment notes' });
     }
 });
 
@@ -640,14 +688,15 @@ app.get('/api/messages', verifyToken, async (req, res) => {
 
 app.post('/api/messages', verifyToken, upload.single('attachment'), async (req, res) => {
     try {
-        const { recipient_id, subject, content } = req.body;
+        const { recipient_id, subject, content, message_type = 'general' } = req.body;
         const sender_id = req.user.id;
         const attachment_path = req.file ? req.file.filename : null;
         
+        // Stored XSS vulnerability - content stored without sanitization
         // SQL injection vulnerable query - including attachment support
         const result = await pool.query(
-            `INSERT INTO messages (sender_id, recipient_id, subject, content, attachment_path) 
-             VALUES ('${sender_id}', '${recipient_id}', '${subject}', '${content}', '${attachment_path}') 
+            `INSERT INTO messages (sender_id, recipient_id, subject, content, attachment_path, message_type) 
+             VALUES ('${sender_id}', '${recipient_id}', '${subject}', '${content}', '${attachment_path}', '${message_type}') 
              RETURNING *`
         );
         
@@ -1177,7 +1226,7 @@ const startServer = async () => {
 startServer().catch(error => {
     console.error('💥 Failed to start server:', error);
     process.exit(1);
-});
+}); 
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -1206,6 +1255,396 @@ app.get('/api/files/:filename', verifyToken, async (req, res) => {
 });
 
 // ===== SEARCH ENDPOINT - Reflected XSS vulnerability =====
+app.get('/api/search', verifyToken, async (req, res) => {
+    try {
+        const { q, type = 'patients' } = req.query;
+        
+        if (!q) {
+            return res.status(400).json({ error: 'Search query required' });
+        }
+        
+        let results = [];
+        let searchQuery = '';
+        
+        // Reflected XSS vulnerability - query parameter directly reflected in response
+        const searchSummary = `<div class="search-summary">
+            <h3>Search Results for: <span class="search-term">${q}</span></h3>
+            <p>Search type: ${type}</p>
+        </div>`;
+        
+        if (req.user.role === 'doctor' || req.user.role === 'admin') {
+            if (type === 'patients') {
+                // SQL injection vulnerable query
+                searchQuery = `SELECT id, first_name, last_name, email, phone FROM users WHERE role = 'patient' AND (first_name ILIKE '%${q}%' OR last_name ILIKE '%${q}%' OR email ILIKE '%${q}%')`;
+            } else if (type === 'appointments') {
+                searchQuery = `SELECT a.*, p.first_name, p.last_name FROM appointments a JOIN users p ON a.patient_id = p.id WHERE a.reason ILIKE '%${q}%'`;
+            }
+        } else if (req.user.role === 'pharmacist') {
+            if (type === 'prescriptions') {
+                searchQuery = `SELECT pr.*, p.first_name, p.last_name FROM prescriptions pr JOIN users p ON pr.patient_id = p.id WHERE pr.medication_name ILIKE '%${q}%'`;
+            }
+        } else {
+            // Patients can only search their own data
+            searchQuery = `SELECT * FROM appointments WHERE patient_id = ${req.user.id} AND reason ILIKE '%${q}%'`;
+        }
+        
+        if (searchQuery) {
+            const result = await pool.query(searchQuery);
+            results = result.rows;
+        }
+        
+        res.json({
+            searchSummary: searchSummary, // XSS vulnerability here
+            query: q,
+            type: type,
+            results: results,
+            count: results.length
+        });
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({ 
+            error: 'Search failed',
+            searchSummary: `<div class="error">Search for "${req.query.q}" failed</div>` // XSS here too
+        });
+    }
+});
+
+// ===== XML MEDICAL HISTORY IMPORT - XXE and RCE vulnerabilities =====
+app.post('/api/medical-history/import', verifyToken, upload.single('xmlFile'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'XML file required' });
+        }
+        
+        const xmlContent = fs.readFileSync(req.file.path, 'utf8');
+        
+        // XXE vulnerability - using libxmljs with external entity processing enabled
+        const libxmljs = require('libxmljs');
+        
+        try {
+            // Dangerous XML parsing - allows external entities
+            const xmlDoc = libxmljs.parseXml(xmlContent, {
+                noent: true,    // Enable entity substitution (XXE vulnerability)
+                dtdload: true,  // Load external DTD
+                dtdvalid: true  // Validate against DTD
+            });
+            
+            // Extract medical history data
+            const patientData = {};
+            const conditions = xmlDoc.find('//condition');
+            const medications = xmlDoc.find('//medication');
+            const allergies = xmlDoc.find('//allergy');
+            
+            // Process conditions with potential RCE
+            const processedConditions = [];
+            conditions.forEach(condition => {
+                const conditionText = condition.text();
+                
+                // Command injection vulnerability in processing
+                if (conditionText.includes('{{eval:')) {
+                    const evalMatch = conditionText.match(/\{\{eval:(.*?)\}\}/);
+                    if (evalMatch) {
+                        try {
+                            // RCE vulnerability - evaluating user input
+                            const result = eval(evalMatch[1]);
+                            processedConditions.push(`Processed: ${result}`);
+                        } catch (e) {
+                            processedConditions.push(`Error processing: ${conditionText}`);
+                        }
+                    }
+                } else {
+                    processedConditions.push(conditionText);
+                }
+            });
+            
+            // Store in database with SQL injection vulnerability
+            const historyData = {
+                conditions: processedConditions.join(', '),
+                medications: medications.map(m => m.text()).join(', '),
+                allergies: allergies.map(a => a.text()).join(', '),
+                import_date: new Date().toISOString(),
+                imported_by: req.user.id
+            };
+            
+            // SQL injection vulnerable insert
+            const insertQuery = `INSERT INTO medical_history (patient_id, conditions, medications, allergies, import_date, imported_by) 
+                               VALUES ('${req.user.id}', '${historyData.conditions}', '${historyData.medications}', '${historyData.allergies}', '${historyData.import_date}', '${historyData.imported_by}')`;
+            
+            await pool.query(insertQuery);
+            
+            res.json({
+                message: 'Medical history imported successfully',
+                processed: {
+                    conditions: processedConditions.length,
+                    medications: medications.length,
+                    allergies: allergies.length
+                },
+                xmlPreview: xmlContent.substring(0, 500) + '...'
+            });
+            
+        } catch (xmlError) {
+            // Expose XML parsing errors (information disclosure)
+            res.status(400).json({
+                error: 'XML parsing failed',
+                details: xmlError.message,
+                xmlContent: xmlContent.substring(0, 200) // Partial content exposure
+            });
+        }
+        
+    } catch (error) {
+        console.error('XML import error:', error);
+        res.status(500).json({ 
+            error: 'Import failed',
+            stack: error.stack // Stack trace exposure
+        });
+    } finally {
+        // Clean up uploaded file
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+    }
+});
+
+// ===== ENHANCED FILE UPLOAD WITH EXECUTION - RCE vulnerability =====
+app.post('/api/files/upload-advanced', verifyToken, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'File required' });
+        }
+        
+        const { executeFile, fileType } = req.body;
+        const filePath = req.file.path;
+        const fileName = req.file.filename;
+        const originalName = req.file.originalname;
+        
+        // Very weak file type validation
+        const dangerousExtensions = ['.exe', '.bat']; // Only blocks Windows executables
+        const fileExtension = path.extname(originalName).toLowerCase();
+        
+        // Allow dangerous files like .php, .js, .py, .sh, .jsp, .asp
+        if (dangerousExtensions.includes(fileExtension)) {
+            fs.unlinkSync(filePath);
+            return res.status(400).json({ error: 'Executable files not allowed' });
+        }
+        
+        // File execution vulnerability
+        if (executeFile === 'true') {
+            const { exec } = require('child_process');
+            let command = '';
+            
+            // Determine execution command based on file type
+            switch (fileExtension) {
+                case '.js':
+                    command = `node "${filePath}"`;
+                    break;
+                case '.py':
+                    command = `python3 "${filePath}"`;
+                    break;
+                case '.sh':
+                    command = `bash "${filePath}"`;
+                    break;
+                case '.php':
+                    command = `php "${filePath}"`;
+                    break;
+                default:
+                    // Try to execute anyway (dangerous)
+                    command = `"${filePath}"`;
+            }
+            
+            console.log('Executing uploaded file:', command);
+            
+            exec(command, { timeout: 5000 }, (error, stdout, stderr) => {
+                const executionResult = {
+                    fileName: fileName,
+                    originalName: originalName,
+                    executed: true,
+                    command: command,
+                    stdout: stdout,
+                    stderr: stderr,
+                    error: error ? error.message : null
+                };
+                
+                res.json(executionResult);
+            });
+        } else {
+            // Just store the file
+            res.json({
+                fileName: fileName,
+                originalName: originalName,
+                size: req.file.size,
+                path: `/uploads/${fileName}`,
+                executed: false
+            });
+        }
+        
+    } catch (error) {
+        console.error('Advanced file upload error:', error);
+        res.status(500).json({ 
+            error: 'Upload failed',
+            details: error.message
+        });
+    }
+});
+
+// ===== PARAMETER POLLUTION VULNERABILITY =====
+app.get('/api/users/profile', verifyToken, async (req, res) => {
+    try {
+        // Parameter pollution vulnerability - last value wins
+        let userId = req.user.id;
+        
+        // If admin, allow viewing other user profiles via user_id parameter
+        if (req.user.role === 'admin' && req.query.user_id) {
+            // Handle parameter pollution - if multiple user_id params, use the last one
+            userId = Array.isArray(req.query.user_id) ? 
+                     req.query.user_id[req.query.user_id.length - 1] : 
+                     req.query.user_id;
+        }
+        
+        // SQL injection vulnerability
+        const query = `SELECT id, email, role, first_name, last_name, phone, specialization, license_number FROM users WHERE id = '${userId}'`;
+        const result = await pool.query(query);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({ error: 'Failed to get profile' });
+    }
+});
+
+// ===== JWT ALGORITHM CONFUSION VULNERABILITY =====
+app.post('/api/auth/verify-token', async (req, res) => {
+    try {
+        const { token, algorithm } = req.body;
+        
+        if (!token) {
+            return res.status(400).json({ error: 'Token required' });
+        }
+        
+        // Algorithm confusion vulnerability - allows user to specify algorithm
+        const verifyOptions = {
+            algorithms: algorithm ? [algorithm] : ['HS256', 'RS256', 'none'] // Dangerous: allows 'none' algorithm
+        };
+        
+        try {
+            // Vulnerable JWT verification
+            let decoded;
+            if (algorithm === 'none') {
+                // None algorithm bypass - just decode without verification
+                decoded = jwt.decode(token);
+            } else {
+                decoded = jwt.verify(token, JWT_SECRET, verifyOptions);
+            }
+            
+            res.json({
+                valid: true,
+                decoded: decoded,
+                algorithm: algorithm || 'default',
+                message: 'Token is valid'
+            });
+            
+        } catch (jwtError) {
+            res.status(401).json({
+                valid: false,
+                error: jwtError.message,
+                algorithm: algorithm || 'default'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.status(500).json({ error: 'Verification failed' });
+    }
+});
+
+// ===== RATE LIMITING BYPASS VULNERABILITY =====
+let rateLimitStore = new Map();
+
+app.post('/api/auth/login-with-rate-limit', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        // Weak rate limiting implementation
+        const clientId = req.headers['x-forwarded-for'] || 
+                        req.headers['x-real-ip'] || 
+                        req.connection.remoteAddress ||
+                        req.ip;
+        
+        // Rate limiting bypass vulnerabilities:
+        // 1. Can be bypassed with X-Forwarded-For header
+        // 2. Can be bypassed with X-Real-IP header  
+        // 3. Uses client-controlled identifier
+        
+        const now = Date.now();
+        const windowMs = 15 * 60 * 1000; // 15 minutes
+        const maxAttempts = 5;
+        
+        if (!rateLimitStore.has(clientId)) {
+            rateLimitStore.set(clientId, { attempts: 0, resetTime: now + windowMs });
+        }
+        
+        const clientData = rateLimitStore.get(clientId);
+        
+        if (now > clientData.resetTime) {
+            // Reset window
+            clientData.attempts = 0;
+            clientData.resetTime = now + windowMs;
+        }
+        
+        if (clientData.attempts >= maxAttempts) {
+            return res.status(429).json({ 
+                error: 'Too many login attempts',
+                resetTime: clientData.resetTime,
+                clientId: clientId // Information disclosure
+            });
+        }
+        
+        // Increment attempts
+        clientData.attempts++;
+        
+        // Proceed with login (reuse existing login logic)
+        const result = await pool.query(`SELECT * FROM users WHERE email = '${email}'`);
+        
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        const user = result.rows[0];
+        const validPassword = await bcrypt.compare(password, user.password);
+        
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        // Reset attempts on successful login
+        rateLimitStore.delete(clientId);
+        
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '24h', algorithm: 'HS256' }
+        );
+        
+        res.json({
+            user: { id: user.id, email: user.email, role: user.role },
+            token: token,
+            rateLimitInfo: {
+                attempts: clientData.attempts,
+                maxAttempts: maxAttempts,
+                resetTime: clientData.resetTime
+            }
+        });
+        
+    } catch (error) {
+        console.error('Rate limited login error:', error);
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
 
 // ===== SYSTEM INFO ENDPOINT - Information Disclosure =====
 app.get('/api/info', (req, res) => {

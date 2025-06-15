@@ -1,32 +1,38 @@
 import React, { useState } from 'react';
 import logo from '../assets/logo-light-bg.svg';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [emailPreview, setEmailPreview] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setMessage('');
     
     try {
-      // Deliberately vulnerable: No input sanitization
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: username, password }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Deliberately vulnerable: Storing JWT token in localStorage
-        localStorage.setItem('user', JSON.stringify(data));
-        window.location.href = '/dashboard';
+        setMessage(data.message + (data.emailGenerated ? ' Check the email preview below for testing.' : ''));
+        if (data.emailGenerated) {
+          setEmailPreview({
+            emailPreviewUrl: data.emailPreviewUrl,
+            recoveryUrl: data.recoveryUrl
+          });
+        }
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Failed to send reset email');
       }
     } catch (err) {
       setError('Network error occurred');
@@ -39,59 +45,53 @@ const Login = () => {
         <div className="auth-logo">
           <img src={logo} alt="Zero Health Logo" className="auth-logo-image" />
         </div>
-        <h2>Welcome Back!</h2>
-        <p className="subtitle">Login to access your medical records</p>
+        <h2>Forgot Your Password?</h2>
+        <p className="subtitle">Enter your email address and we'll send you a reset link</p>
 
+        {message && <div className="success-message">{message}</div>}
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="username">Email</label>
+            <label htmlFor="email">Email Address</label>
             <input
-              type="text" // Deliberately vulnerable: Should be type="email"
-              id="username"
-              name="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="text" // Deliberately vulnerable: Should be type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
               required
             />
           </div>
 
           <button type="submit" className="btn btn-primary">
-            Login
+            Send Reset Link
           </button>
         </form>
 
+        {emailPreview && (
+          <div className="email-preview">
+            <h4>📧 Email Preview (Development Mode)</h4>
+            <p>In a real application, this would be sent to your email. For testing purposes, you can view the email here:</p>
+            <a href={`http://localhost:5000${emailPreview.emailPreviewUrl}`} target="_blank" rel="noopener noreferrer" className="preview-link">
+              View Password Reset Email
+            </a>
+            <br /><br />
+            <p><strong>Direct Reset Link:</strong></p>
+            <a href={emailPreview.recoveryUrl} className="preview-link">
+              Reset Password Now
+            </a>
+          </div>
+        )}
+
         <div className="auth-links">
           <p>
-            Don't have an account?{' '}
             <button
-              onClick={() => window.location.href = '/register'}
+              onClick={() => window.location.href = '/login'}
               className="link-button"
             >
-              Register here
-            </button>
-          </p>
-          <p>
-            <button
-              onClick={() => window.location.href = '/forgot-password'}
-              className="link-button"
-            >
-              Forgot Password?
+              ← Back to Login
             </button>
           </p>
         </div>
@@ -113,7 +113,7 @@ const Login = () => {
           border-radius: 1rem;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           width: 100%;
-          max-width: 400px;
+          max-width: 500px;
         }
 
         .auth-logo {
@@ -139,6 +139,15 @@ const Login = () => {
           color: #6b7280;
           text-align: center;
           margin-bottom: 2rem;
+        }
+
+        .success-message {
+          background: #d1fae5;
+          color: #065f46;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          margin-bottom: 1.5rem;
+          text-align: center;
         }
 
         .error-message {
@@ -200,6 +209,29 @@ const Login = () => {
           transform: translateY(-2px);
         }
 
+        .email-preview {
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 0.5rem;
+          padding: 1.5rem;
+          margin-top: 1.5rem;
+        }
+
+        .email-preview h4 {
+          margin-top: 0;
+          color: #495057;
+        }
+
+        .preview-link {
+          color: #2563eb;
+          text-decoration: none;
+          word-break: break-all;
+        }
+
+        .preview-link:hover {
+          text-decoration: underline;
+        }
+
         .auth-links {
           margin-top: 1.5rem;
           text-align: center;
@@ -224,4 +256,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default ForgotPassword; 

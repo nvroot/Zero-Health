@@ -1671,3 +1671,403 @@ app.get('/api/info', (req, res) => {
         last_updated: '2024-12-15'
     });
 });
+
+// ===== FORGOT PASSWORD - Reflected XSS vulnerability =====
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email required' });
+        }
+        
+        // Check if user exists
+        const result = await pool.query(
+            `SELECT id, first_name, last_name FROM users WHERE email = $1`,
+            [email]
+        );
+        
+        if (result.rows.length === 0) {
+            // Don't reveal if email exists or not (security through obscurity)
+            return res.json({ 
+                message: 'If an account with that email exists, a password reset link has been sent.',
+                emailGenerated: false
+            });
+        }
+        
+        const user = result.rows[0];
+        
+        // Generate a "recovery code" (deliberately weak)
+        const recoveryCode = Math.random().toString(36).substring(2, 15);
+        
+        // Store recovery code in database (vulnerable to timing attacks)
+        await pool.query(
+            `UPDATE users SET password = $1 WHERE email = $2`,
+            [`RESET_${recoveryCode}`, email] // Temporarily store in password field
+        );
+        
+        // Generate the recovery URL with the code - point to React frontend
+        const recoveryUrl = `http://localhost:3000/reset-password?email=${encodeURIComponent(email)}&code=${recoveryCode}`;
+        
+        // Generate HTML email content (this simulates what would be sent)
+        const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Zero Health - Password Reset</title>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background: #f8f9fa; }
+                .button { background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0; }
+                .footer { font-size: 12px; color: #666; margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🏥 Zero Health</h1>
+                <p>Password Reset Request</p>
+            </div>
+            <div class="content">
+                <h2>Hello ${user.first_name} ${user.last_name},</h2>
+                <p>We received a request to reset your password for your Zero Health account.</p>
+                <p>Click the button below to reset your password:</p>
+                <a href="${recoveryUrl}" class="button">Reset My Password</a>
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 4px;">${recoveryUrl}</p>
+                <p>This link will expire in 24 hours for security reasons.</p>
+                <p>If you didn't request this password reset, please ignore this email.</p>
+            </div>
+            <div class="footer">
+                <p>This is an automated message from Zero Health. Please do not reply to this email.</p>
+                <p>© 2024 Zero Health - Educational Healthcare Security Platform</p>
+            </div>
+        </body>
+        </html>
+        `;
+        
+        // Save the email HTML to a file (simulating email sending)
+        const emailsDir = path.join(__dirname, 'emails');
+        if (!fs.existsSync(emailsDir)) {
+            fs.mkdirSync(emailsDir);
+        }
+        
+        const emailFileName = `password-reset-${user.id}-${Date.now()}.html`;
+        const emailFilePath = path.join(emailsDir, emailFileName);
+        fs.writeFileSync(emailFilePath, emailHtml);
+        
+        res.json({
+            message: 'If an account with that email exists, a password reset link has been sent.',
+            emailGenerated: true,
+            emailPreviewUrl: `/emails/${emailFileName}`,
+            recoveryUrl: recoveryUrl, // Exposed for testing purposes
+            note: 'In a real application, this would be sent via email. Check the email preview to see the reset link.'
+        });
+        
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+});
+
+// Serve email files statically for preview
+app.use('/emails', express.static(path.join(__dirname, 'emails')));
+
+// ===== PASSWORD RESET - Reflected XSS vulnerability =====
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: 'Email, code, and new password required' });
+        }
+        
+        // Check if user exists and has the correct reset code
+        const result = await pool.query(
+            `SELECT id, first_name, last_name, password FROM users WHERE email = $1`,
+            [email]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid reset request' });
+        }
+        
+        const user = result.rows[0];
+        
+        // Check if password field contains the reset code
+        if (!user.password.startsWith('RESET_') || !user.password.includes(code)) {
+            return res.status(400).json({ error: 'Invalid or expired reset code' });
+        }
+        
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 5);
+        
+        // Update password
+        await pool.query(
+            `UPDATE users SET password = $1 WHERE email = $2`,
+            [hashedPassword, email]
+        );
+        
+        res.json({
+            message: 'Password reset successfully',
+            user: {
+                id: user.id,
+                email: email,
+                name: `${user.first_name} ${user.last_name}`
+            }
+        });
+        
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// ===== PASSWORD RESET PAGE - Moved to React Frontend =====
+// This server-side route is no longer used - replaced by React component
+/*
+app.get('/reset-password', (req, res) => {
+    // This route has been moved to React frontend
+    // XSS vulnerability is now demonstrated in React component using dangerouslySetInnerHTML
+    res.redirect(`http://localhost:3000/reset-password?${req.url.split('?')[1] || ''}`);
+});
+*/
+
+// ===== FORGOT PASSWORD PAGE =====
+app.get('/forgot-password', (req, res) => {
+    const { message, error } = req.query;
+    
+    const htmlResponse = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Forgot Password - Zero Health</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                margin: 0;
+                padding: 20px;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .container {
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                max-width: 500px;
+                width: 100%;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .logo {
+                font-size: 2rem;
+                color: #007bff;
+                margin-bottom: 10px;
+            }
+            h1 {
+                color: #333;
+                margin-bottom: 10px;
+            }
+            .form-group {
+                margin-bottom: 20px;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+                color: #555;
+                font-weight: 500;
+            }
+            input[type="email"] {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+                box-sizing: border-box;
+            }
+            input[type="email"]:focus {
+                border-color: #007bff;
+                outline: none;
+            }
+            .btn {
+                background: #007bff;
+                color: white;
+                padding: 12px 30px;
+                border: none;
+                border-radius: 5px;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+                margin-top: 10px;
+            }
+            .btn:hover {
+                background: #0056b3;
+            }
+            .message {
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .success {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .error {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            .info {
+                background: #d1ecf1;
+                color: #0c5460;
+                border: 1px solid #bee5eb;
+            }
+            .back-link {
+                text-align: center;
+                margin-top: 20px;
+            }
+            .back-link a {
+                color: #007bff;
+                text-decoration: none;
+            }
+            .back-link a:hover {
+                text-decoration: underline;
+            }
+            .email-preview {
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                padding: 15px;
+                margin-top: 15px;
+            }
+            .email-preview h4 {
+                margin-top: 0;
+                color: #495057;
+            }
+            .email-preview a {
+                color: #007bff;
+                text-decoration: none;
+                word-break: break-all;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">🏥</div>
+                <h1>Forgot Your Password?</h1>
+                <p>Enter your email address and we'll send you a reset link</p>
+            </div>
+            
+            ${message ? `<div class="message success">
+                <strong>Success:</strong> ${message}
+            </div>` : ''}
+            
+            ${error ? `<div class="message error">
+                <strong>Error:</strong> ${error}
+            </div>` : ''}
+            
+            <form id="forgotForm" onsubmit="forgotPassword(event)">
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                </div>
+                
+                <button type="submit" class="btn">Send Reset Link</button>
+            </form>
+            
+            <div class="back-link">
+                <a href="/login">← Back to Login</a>
+            </div>
+            
+            <div id="emailPreview" style="display: none;" class="email-preview">
+                <h4>📧 Email Preview (Development Mode)</h4>
+                <p>In a real application, this would be sent to your email. For testing purposes, you can view the email here:</p>
+                <a id="emailLink" href="#" target="_blank">View Password Reset Email</a>
+                <br><br>
+                <p><strong>Direct Reset Link:</strong></p>
+                <a id="resetLink" href="#" target="_blank">Reset Password Now</a>
+            </div>
+        </div>
+        
+        <script>
+            async function forgotPassword(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(event.target);
+                const email = formData.get('email');
+                
+                try {
+                    const response = await fetch('/api/auth/forgot-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email: email })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        if (result.emailGenerated) {
+                            // Show email preview for testing
+                            document.getElementById('emailPreview').style.display = 'block';
+                            document.getElementById('emailLink').href = result.emailPreviewUrl;
+                            document.getElementById('resetLink').href = result.recoveryUrl;
+                            
+                            // Show success message without redirecting
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message success';
+                            messageDiv.innerHTML = '<strong>Success:</strong> ' + result.message + ' Check the email preview below for testing.';
+                            
+                            // Remove any existing messages
+                            const existingMessages = document.querySelectorAll('.message');
+                            existingMessages.forEach(msg => msg.remove());
+                            
+                            // Insert message after header
+                            const header = document.querySelector('.header');
+                            header.insertAdjacentElement('afterend', messageDiv);
+                        } else {
+                            // Show message without redirecting
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message success';
+                            messageDiv.innerHTML = '<strong>Success:</strong> ' + result.message;
+                            
+                            const existingMessages = document.querySelectorAll('.message');
+                            existingMessages.forEach(msg => msg.remove());
+                            
+                            const header = document.querySelector('.header');
+                            header.insertAdjacentElement('afterend', messageDiv);
+                        }
+                    } else {
+                        // Show error message without redirecting
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message error';
+                        messageDiv.innerHTML = '<strong>Error:</strong> ' + result.error;
+                        
+                        const existingMessages = document.querySelectorAll('.message');
+                        existingMessages.forEach(msg => msg.remove());
+                        
+                        const header = document.querySelector('.header');
+                        header.insertAdjacentElement('afterend', messageDiv);
+                    }
+                } catch (error) {
+                    alert('An error occurred. Please try again.');
+                }
+            }
+        </script>
+    </body>
+    </html>
+    `;
+    
+    res.send(htmlResponse);
+});

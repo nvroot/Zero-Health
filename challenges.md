@@ -19,19 +19,32 @@ Complex multi-step attacks requiring deep technical knowledge
 
 ## 🟢 BEGINNER CHALLENGES
 
-### Challenge 1: Information Disclosure
-**Difficulty**: Beginner  
-**Category**: Information Disclosure  
-**Goal**: Discover sensitive system information that should not be publicly accessible.
+### Challenge 1: Reflected Cross-Site Scripting (XSS)
+**Difficulty**: 🟢 Beginner  
+**Category**: Web Application Security
 
-**Description**: The Zero Health application exposes internal system information through an unprotected endpoint. Your task is to find this endpoint and extract sensitive configuration details.
+**Description**: 
+The password reset functionality contains a reflected XSS vulnerability where user input from URL parameters is directly embedded into the React component without proper sanitization. The vulnerability exists in the React component's use of `dangerouslySetInnerHTML` to display the reset code parameter.
 
-**What you'll learn**:
-- How applications can leak sensitive information
-- The importance of proper endpoint security
-- Information that attackers look for during reconnaissance
+**Goal**: 
+Execute JavaScript code in another user's browser through the password reset functionality.
 
-**Hint**: Look for endpoints that might provide system status or configuration information. Sometimes developers create debug endpoints that expose more than they should.
+**Learning Objectives**:
+- Understand how reflected XSS vulnerabilities work in React applications
+- Learn about the dangers of `dangerouslySetInnerHTML` in React
+- Practice crafting XSS payloads for modern web applications
+- See how client-side routing can still be vulnerable to XSS
+
+**Hints**:
+- The vulnerability is in the React component at `/reset-password`
+- Look at how the `code` parameter from the URL is handled and displayed
+- The React component uses `dangerouslySetInnerHTML` to render the reset code
+- Try crafting a malicious reset URL like: `http://localhost:3000/reset-password?code=<script>alert('XSS')</script>&email=test@example.com`
+- Consider how an attacker might craft a malicious reset link to send to victims via email
+
+**Success Criteria**:
+- Successfully execute JavaScript in the browser context
+- Demonstrate how this could be used in a real attack scenario
 
 ---
 

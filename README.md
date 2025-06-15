@@ -14,6 +14,8 @@ This educational platform demonstrates:
 - The devastating impact of poor security practices in medical environments
 - Why robust security is essential for protecting patient data and maintaining trust
 
+For full list of challenges: (https://github.com/aligorithm/Zero-Health/blob/main/challenges.md)
+
 **Why Healthcare Security Matters**: Medical devices, patient portals, and health records systems require the highest security standards. Vulnerabilities can lead to ransomware attacks shutting down hospitals, identity theft from exposed patient data, or even manipulation of medical devices. This application helps developers understand these risks before building real healthcare systems.
 
 ## Prerequisites

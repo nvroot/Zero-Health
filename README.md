@@ -194,6 +194,21 @@ Advanced multi-step attack chains and modern vulnerability scenarios
 
 Contributions welcome! Please maintain educational vulnerability aspects and document new security issues.
 
+## Community & Support
+
+### 💬 **GitHub Discussions**
+Join our community to share your learnings, discuss exploits, and get help:
+- **[🎯 Share Your Exploits](https://github.com/aligorithm/zero-health/discussions)** - Post successful attack chains and creative exploitation techniques
+- **[❓ Get Help](https://github.com/aligorithm/zero-health/discussions)** - Ask questions if you're stuck on challenges
+- **[💡 Learning Insights](https://github.com/aligorithm/zero-health/discussions)** - Share what you learned and help others
+- **[🔧 Technical Issues](https://github.com/aligorithm/zero-health/discussions)** - Report setup problems or bugs
+- **[🚀 Feature Requests](https://github.com/aligorithm/zero-health/discussions)** - Suggest new vulnerabilities or improvements
+
+### 📚 **Learning Resources**
+- Check out the [Security Challenges Guide](challenges.md) for hands-on exercises
+- Browse [GitHub Discussions](https://github.com/aligorithm/zero-health/discussions) for community solutions and tips
+- Watch the [Demo Video](https://youtu.be/h3jm83jw33Q) for setup and overview
+
 ## Environment Variables
 
 ### AI Provider Configuration

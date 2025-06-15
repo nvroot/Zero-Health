@@ -326,72 +326,62 @@ Execute JavaScript code in another user's browser through the password reset fun
 
 ---
 
-## 📚 Learning Resources
+## 🎯 BONUS CHALLENGES
 
-### Recommended Reading
-- OWASP Top 10 Web Application Security Risks
-- OWASP API Security Top 10
-- NIST Cybersecurity Framework
-- Healthcare Cybersecurity Best Practices
+### Challenge 19: Healthcare-Specific Attack Chain
+**Difficulty**: Bonus  
+**Category**: Advanced Exploitation  
+**Goal**: Chain multiple vulnerabilities to simulate a realistic healthcare data breach.
 
-### Tools You Might Need
-- Burp Suite or OWASP ZAP (Web Application Testing)
-- Browser Developer Tools
-- Command Line Tools (curl, etc.)
-- Text Editor for payload crafting
+**Description**: Combine multiple vulnerabilities discovered in previous challenges to create a complete attack scenario. Start as an unauthenticated user and work your way to accessing sensitive patient data, modifying medical records, or gaining administrative control.
 
-### Getting Help
-- Review the application's API documentation at `/api/docs`
-- Use browser developer tools to inspect requests/responses
-- Check server logs for error messages (they might contain hints)
-- Remember: the goal is learning, not just completing challenges
+**What you'll learn**:
+- How individual vulnerabilities combine to create critical security risks
+- The importance of defense in depth
+- Real-world attack methodologies used against healthcare systems
 
----
+**Hint**: Consider combining authentication bypass, privilege escalation, and data exfiltration techniques. Think like a real attacker - what would be the most valuable data to target?
 
-## 🎓 Completion Guidelines
+### Challenge 20: Zero-Day Discovery
+**Difficulty**: Bonus  
+**Category**: Vulnerability Research  
+**Goal**: Find a vulnerability not explicitly documented in these challenges.
 
-### For Each Challenge:
-1. **Document your approach**: Write down the steps you took
-2. **Explain the vulnerability**: Describe why the vulnerability exists
-3. **Assess the impact**: What could an attacker do with this vulnerability?
-4. **Suggest remediation**: How would you fix this vulnerability?
+**Description**: Use your security knowledge to discover additional vulnerabilities in the application. This could be logic flaws, edge cases, or novel attack vectors not covered in the main challenges.
 
-### Reporting Format:
-```
-Challenge: [Challenge Name]
-Vulnerability Type: [Type]
-Steps to Reproduce:
-1. [Step 1]
-2. [Step 2]
-...
+**What you'll learn**:
+- Independent security research skills
+- How to think creatively about application security
+- The mindset of a security researcher
 
-Impact: [Description of potential impact]
-Remediation: [How to fix the vulnerability]
-```
+**Hint**: Look for unusual functionality, edge cases in input validation, or creative ways to abuse legitimate features.
 
 ---
 
-## ⚠️ Ethical Guidelines
+## 💬 Community & Help
 
-- Only test against the Zero Health application
-- Do not attempt these techniques on other systems
-- Respect the learning environment
-- Help others learn, but don't just give away answers
-- Report any unintended system issues
+### 🎯 **Share Your Success!**
+Found an exploit? Discovered a creative attack vector? **[Share it in GitHub Discussions!](https://github.com/aligorithm/zero-health/discussions)**
+
+### ❓ **Need Help?**
+Stuck on a challenge? Don't understand a vulnerability? **[Ask for help in GitHub Discussions!](https://github.com/aligorithm/zero-health/discussions)**
+
+### 💡 **Learning Together**
+- **Post your successful exploits** and explain your methodology
+- **Share interesting findings** or alternative attack approaches  
+- **Help others** who are stuck on challenges
+- **Discuss real-world implications** of the vulnerabilities you've discovered
+- **Suggest new challenges** or improvements to existing ones
+
+### 🔗 **Quick Links**
+- **[🎯 Share Exploits & Solutions](https://github.com/aligorithm/zero-health/discussions)** 
+- **[❓ Get Help & Ask Questions](https://github.com/aligorithm/zero-health/discussions)**
+- **[💡 General Discussion](https://github.com/aligorithm/zero-health/discussions)**
+- **[🐛 Report Issues](https://github.com/aligorithm/zero-health/issues)**
 
 ---
 
-## 🏥 Healthcare Security Context
-
-Remember that in real healthcare environments:
-- Patient data is highly sensitive and regulated
-- System downtime can impact patient care
-- Compliance requirements (HIPAA, HITECH) add additional security obligations
-- The stakes are literally life and death
-
-Understanding these challenges in the context of healthcare security will make you a more effective security professional in this critical industry.
-
----
+**Remember**: This is a learning environment! Don't hesitate to ask questions, share your discoveries, or help others. The security community thrives on knowledge sharing and collaboration.
 
 **Happy Hacking! 🔐**
 

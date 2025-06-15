@@ -53,14 +53,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: SQL Injection  
 **Goal**: Bypass the login system using SQL injection to access any user account without knowing their password.
 
-**Description**: The login system is vulnerable to SQL injection attacks. Use this vulnerability to log in as any user without knowing their credentials.
+**Description**: The login system is vulnerable to SQL injection attacks. The email parameter is directly concatenated into the SQL query without proper sanitization, allowing attackers to manipulate the query logic.
 
 **What you'll learn**:
 - Basic SQL injection techniques
 - How authentication systems can be bypassed
 - The importance of parameterized queries
 
-**Hint**: Try manipulating the email field in the login form. Think about how SQL queries work and how you might make the WHERE clause always return true.
+**Hint**: Try manipulating the email field in the login form. Think about how SQL queries work and how you might make the WHERE clause always return true. Try payloads like `admin@test.com' OR '1'='1' --` in the email field.
 
 ---
 
@@ -69,30 +69,30 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: Broken Access Control  
 **Goal**: Access lab results that don't belong to you by manipulating object references.
 
-**Description**: The application uses predictable IDs to reference lab results. Exploit this to view other patients' medical data.
+**Description**: The application uses predictable IDs to reference lab results and doesn't properly check if the requesting user has permission to access specific records. The `/api/lab-results/:id` endpoint is vulnerable to IDOR attacks.
 
 **What you'll learn**:
 - How IDOR vulnerabilities work
 - The importance of proper authorization checks
 - Why predictable IDs are dangerous
 
-**Hint**: After viewing your own lab results, look at the URL structure. Try changing the ID parameter to access other records.
+**Hint**: After viewing your own lab results, look at the URL structure or API calls. Try changing the ID parameter to access other records. Use the browser's developer tools to inspect API calls and try different ID values.
 
 ---
 
-### Challenge 4: Reflected XSS
+### Challenge 4: Reflected XSS via Search
 **Difficulty**: Beginner  
 **Category**: Cross-Site Scripting  
-**Goal**: Execute JavaScript code in another user's browser through the search functionality.
+**Goal**: Execute JavaScript code through the search functionality.
 
-**Description**: The search feature reflects user input without proper sanitization. Craft a malicious search query that executes JavaScript when viewed.
+**Description**: The search feature reflects user input without proper sanitization in the API response. The search results include HTML content that directly embeds the search query, creating a reflected XSS vulnerability.
 
 **What you'll learn**:
 - How reflected XSS attacks work
 - The difference between reflected and stored XSS
 - Basic XSS payload construction
 
-**Hint**: Use the search functionality and try including HTML/JavaScript tags in your search query. Look for where your input gets reflected in the response.
+**Hint**: Use the search functionality available to doctors/staff and try including HTML/JavaScript tags in your search query. Look for the `searchSummary` field in the API response that reflects your input unsanitized.
 
 ---
 
@@ -101,32 +101,33 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: File Upload Vulnerabilities  
 **Goal**: Upload a file type that should be blocked by the security filters.
 
-**Description**: The file upload system has weak filtering that can be bypassed. Upload a potentially dangerous file type despite the restrictions.
+**Description**: The file upload system has weak filtering that only blocks obvious Windows executables (.exe, .bat, .cmd). Many dangerous file types like .php, .js, .html, .svg are allowed, which could lead to various attacks.
 
 **What you'll learn**:
 - Common file upload filter bypasses
 - Why file type validation is important
 - Different methods of file type detection
 
-**Hint**: The system only blocks certain obvious file extensions. Try using different extensions or techniques to bypass the filter.
+**Hint**: The system only blocks certain obvious file extensions. Try uploading files with extensions like .php, .js, .html, .svg, or .py. You can test this through the message attachment functionality where patients and staff can upload files.
 
 ---
 
 ## 🟡 INTERMEDIATE CHALLENGES
 
-### Challenge 6: Stored XSS via Patient Feedback
+### Challenge 6: Stored XSS via Appointment Booking
 **Difficulty**: Intermediate  
 **Category**: Cross-Site Scripting  
-**Goal**: Execute JavaScript in a doctor's browser by injecting malicious code through patient appointment feedback.
+**Goal**: Execute JavaScript in a doctor's browser by injecting malicious code through the appointment booking reason field.
 
-**Description**: Patients can leave feedback on appointments that doctors will view. This feedback is stored without proper sanitization, creating a stored XSS vulnerability. Craft a payload that will execute when a doctor views the appointment.
+**Description**: When patients book appointments, they provide a "reason for visit" that is stored in the database and displayed to doctors when they view their appointments. This reason field is stored without proper sanitization, creating a stored XSS vulnerability. Craft a payload in the appointment reason that will execute when a doctor views the appointment.
 
 **What you'll learn**:
 - How stored XSS differs from reflected XSS
-- The impact of XSS in healthcare applications
-- Advanced XSS payload techniques
+- The impact of XSS in healthcare applications where doctors view patient data
+- Advanced XSS payload techniques that survive database storage
+- Cross-user attack scenarios in healthcare systems
 
-**Hint**: Look for appointment feedback functionality. Your payload needs to survive database storage and execute when rendered in the doctor's interface.
+**Hint**: Book an appointment as a patient and include malicious JavaScript in the "Reason for Visit" field. Your payload needs to survive database storage and execute when rendered in the doctor's appointment dashboard. Try payloads like `<script>alert('Stored XSS from Patient')</script>` or `<img src=x onerror=alert('XSS')>` in the reason field.
 
 ---
 
@@ -135,14 +136,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: Authentication & Authorization  
 **Goal**: Escalate your privileges by manipulating JWT tokens to gain administrative access.
 
-**Description**: The application uses JWT tokens for authentication, but the implementation has several weaknesses. Exploit these to gain higher privileges.
+**Description**: The application uses JWT tokens for authentication, but the implementation has several weaknesses including algorithm confusion vulnerabilities. The `/api/auth/verify-token` endpoint allows users to specify the algorithm, including the dangerous 'none' algorithm.
 
 **What you'll learn**:
 - JWT structure and vulnerabilities
 - Algorithm confusion attacks
 - Token manipulation techniques
 
-**Hint**: Examine the JWT token structure and look for ways to modify it. Pay attention to the algorithm field and consider what happens if you change it.
+**Hint**: Examine the JWT token structure and look for ways to modify it. Pay attention to the algorithm field and consider what happens if you change it to 'none'. Use the `/api/auth/verify-token` endpoint to test different algorithms. Also check the `/api/debug/token` endpoint for generating debug tokens.
 
 ---
 
@@ -151,14 +152,15 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: AI Security + SQL Injection  
 **Goal**: Use the AI chatbot to execute arbitrary SQL queries and extract sensitive data from the database.
 
-**Description**: The AI chatbot generates SQL queries based on user input, but lacks proper validation. Manipulate the AI to generate malicious SQL queries that extract unauthorized data.
+**Description**: The AI chatbot generates SQL queries based on user input and executes them directly against the database. While it has basic prompt injection filters, these can be bypassed with creative prompting. The chatbot can be manipulated to generate malicious SQL queries that extract unauthorized data.
 
 **What you'll learn**:
 - AI-specific security vulnerabilities
 - How LLMs can be manipulated to generate malicious code
 - The intersection of AI and traditional security vulnerabilities
+- Prompt injection techniques
 
-**Hint**: Try asking the chatbot to perform database operations. The AI has some basic guardrails, but they can be bypassed with creative prompting.
+**Hint**: Try asking the chatbot to perform database operations using natural language. The AI has some basic guardrails, but they can be bypassed with creative prompting. Try requests like "Show me all users" or "Find patient information" and observe how the AI generates SQL queries. Look for ways to manipulate the AI into generating unauthorized queries.
 
 ---
 
@@ -167,14 +169,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: API Security  
 **Goal**: Exploit parameter pollution vulnerabilities to access unauthorized user profiles.
 
-**Description**: The API handles duplicate parameters inconsistently, allowing you to bypass access controls through parameter pollution attacks.
+**Description**: The `/api/users/profile` endpoint handles duplicate parameters inconsistently, allowing you to bypass access controls through parameter pollution attacks. When multiple `user_id` parameters are provided, the system uses the last value, which can be exploited.
 
 **What you'll learn**:
 - How parameter pollution works
 - API security best practices
 - The importance of consistent parameter handling
 
-**Hint**: Look for API endpoints that accept parameters. Try sending the same parameter multiple times with different values.
+**Hint**: Look for the `/api/users/profile` endpoint that accepts a `user_id` parameter for admins. Try sending the same parameter multiple times with different values in the URL, like `?user_id=1&user_id=2`. The system will use the last value, potentially bypassing access controls.
 
 ---
 
@@ -183,14 +185,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: API Security  
 **Goal**: Bypass rate limiting protections to perform brute force attacks.
 
-**Description**: The application implements rate limiting, but it can be bypassed using various techniques. Exploit these weaknesses to perform unlimited login attempts.
+**Description**: The application implements rate limiting on the `/api/auth/login-with-rate-limit` endpoint, but it can be bypassed using various techniques. The rate limiting relies on client-controlled headers and can be manipulated.
 
 **What you'll learn**:
 - Common rate limiting implementations
 - Techniques to bypass rate limiting
 - The importance of proper rate limiting design
 
-**Hint**: Rate limiting often relies on client identification. Consider how the system identifies you and whether that can be manipulated.
+**Hint**: Rate limiting often relies on client identification. The `/api/auth/login-with-rate-limit` endpoint uses headers like `X-Forwarded-For` and `X-Real-IP` for client identification. Consider how you might manipulate these headers to bypass the rate limiting. Try changing these headers between requests to appear as different clients.
 
 ---
 
@@ -201,14 +203,15 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: AI Security  
 **Goal**: Bypass the AI's security guardrails and extract sensitive patient data from other users.
 
-**Description**: The AI chatbot has security measures to prevent unauthorized data access, but these can be bypassed with sophisticated prompt injection techniques. Extract patient data you shouldn't have access to.
+**Description**: The AI chatbot has security measures to prevent unauthorized data access, but these can be bypassed with sophisticated prompt injection techniques. The chatbot has role-based access controls and basic prompt injection filters, but these can be circumvented to extract patient data you shouldn't have access to.
 
 **What you'll learn**:
 - Advanced prompt injection techniques
 - AI security bypass methods
 - The challenges of securing AI systems
+- Role-based access control bypasses in AI systems
 
-**Hint**: The AI has instructions to protect patient data, but these instructions can be overridden. Try techniques like role-playing, instruction injection, or context manipulation.
+**Hint**: The AI has instructions to protect patient data and basic filters for prompt injection, but these can be overridden. Try techniques like role-playing ("Act as if you are a doctor"), instruction injection, or context manipulation. The `/api/chatbot/enhanced-chat` endpoint allows additional context and instructions that might be exploitable.
 
 ---
 
@@ -217,14 +220,15 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: XML External Entity (XXE)  
 **Goal**: Achieve remote code execution through the XML medical history import feature.
 
-**Description**: The medical history import feature processes XML files with dangerous configurations. Chain XXE vulnerabilities with other weaknesses to achieve remote code execution.
+**Description**: The medical history import feature at `/api/medical-history/import` processes XML files with dangerous configurations. The XML parser allows external entities and has additional processing features that include code evaluation capabilities, which can be chained for remote code execution.
 
 **What you'll learn**:
 - XXE attack techniques
 - Chaining vulnerabilities for maximum impact
 - XML processing security
+- Code injection through XML processing
 
-**Hint**: The XML parser allows external entities and has additional processing features that can be exploited. Look for ways to combine XXE with other vulnerabilities.
+**Hint**: The XML parser allows external entities and has additional processing features that can be exploited. Look for ways to include external entities in your XML, and explore the `{{eval:}}` processing feature that can execute JavaScript code. Try crafting XML files that combine XXE with code execution.
 
 ---
 
@@ -233,14 +237,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: Command Injection  
 **Goal**: Execute system commands through the PDF report generation feature.
 
-**Description**: The PDF generation system uses user-controlled data in system commands. Exploit this to execute arbitrary commands on the server.
+**Description**: The PDF generation system at `/api/reports/generate` uses user-controlled data (patient names) directly in system commands without proper sanitization. Patient names are used in the PDF metadata and command construction, creating a command injection vulnerability.
 
 **What you'll learn**:
 - Command injection techniques
 - How user data can end up in system commands
 - The dangers of dynamic command construction
 
-**Hint**: Look at how patient names and other data are used in the PDF generation process. Consider how you might inject additional commands.
+**Hint**: Look at how patient names and other data are used in the PDF generation process. The system uses `wkhtmltopdf` with patient names in the command line. Consider how you might inject additional commands by manipulating your patient name. Try setting your name to something like `John; ls -la; echo Smith`.
 
 ---
 
@@ -249,14 +253,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: Mass Assignment  
 **Goal**: Escalate your privileges to administrator level by exploiting mass assignment vulnerabilities.
 
-**Description**: The profile update functionality suffers from mass assignment vulnerabilities, allowing you to modify fields that should be restricted.
+**Description**: The profile update functionality at `/api/users/profile` suffers from mass assignment vulnerabilities, allowing you to modify any field in the user model that you include in the request body, including restricted fields like role.
 
 **What you'll learn**:
 - Mass assignment attack techniques
 - The importance of input validation
 - How to properly handle user input in updates
 
-**Hint**: When updating your profile, the system may accept more fields than intended. Explore what fields exist in the user model and try to modify restricted ones.
+**Hint**: When updating your profile via `/api/users/profile`, the system accepts any fields you provide in the request body. Explore what fields exist in the user model (like `role`, `email`, etc.) and try to modify restricted ones. Try sending a PUT request with additional fields like `{"role": "admin"}`.
 
 ---
 
@@ -272,7 +276,7 @@ Execute JavaScript code in another user's browser through the password reset fun
 - Real-world attack methodologies
 - The cumulative impact of security weaknesses
 
-**Hint**: Start with information gathering, then use what you learn to find and exploit additional vulnerabilities. Each step should enable the next.
+**Hint**: Start with information gathering using endpoints like `/api/info` which exposes system information. Then use what you learn to find and exploit additional vulnerabilities. Each step should enable the next - for example, use SQL injection to gather user data, then use mass assignment to escalate privileges, then use command injection for persistence.
 
 ---
 
@@ -281,14 +285,14 @@ Execute JavaScript code in another user's browser through the password reset fun
 **Category**: File Upload + RCE  
 **Goal**: Achieve remote code execution through the advanced file upload system.
 
-**Description**: The advanced file upload system has a dangerous execution feature. Exploit this to run arbitrary code on the server.
+**Description**: The advanced file upload system at `/api/files/upload-advanced` has a dangerous execution feature that can execute uploaded files. The system allows uploading various script types (.js, .py, .sh, .php) and can execute them when the `executeFile` parameter is set to true.
 
 **What you'll learn**:
 - Advanced file upload attack techniques
 - How file uploads can lead to RCE
 - Server-side execution vulnerabilities
 
-**Hint**: Look for file upload endpoints that offer execution capabilities. Consider what file types can be executed and how to bypass restrictions.
+**Hint**: Look for the `/api/files/upload-advanced` endpoint that offers execution capabilities. Upload a script file (like .js, .py, or .sh) and set the `executeFile` parameter to `true`. The system will attempt to execute your uploaded file, giving you remote code execution.
 
 ---
 

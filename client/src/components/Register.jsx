@@ -34,7 +34,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://nc5.netbird.local:6000/api/register', {
+      const response = await fetch('http://nc5.netbird.local:6002/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

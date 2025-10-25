@@ -48,7 +48,7 @@ services:
   server:
     build: .
     ports:
-      - "6000:6000"
+      - "6002:5000"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -88,9 +88,9 @@ services:
   client:
     build: ./client
     ports:
-      - "6001:6001"
+      - "6001:3000"
     environment:
-      - REACT_APP_API_URL=http://nc5.netbird.local:6000
+      - REACT_APP_API_URL=http://nc5.netbird.local:6002
     depends_on:
       - server
     <<: *env

@@ -77,7 +77,7 @@ const Chatbot = ({ user }) => {
         }
         
         console.log('🌐 Making request to chat history endpoint...');
-        const response = await fetch('http://nc5.netbird.local:6000/api/chatbot/history', {
+        const response = await fetch('http://nc5.netbird.local:6002/api/chatbot/history', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -170,7 +170,7 @@ const Chatbot = ({ user }) => {
     try {
       const userData = localStorage.getItem('user');
       const token = userData ? JSON.parse(userData).token : null;
-      const response = await fetch('http://nc5.netbird.local:6000/api/chatbot/chat', {
+      const response = await fetch('http://nc5.netbird.local:6002/api/chatbot/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

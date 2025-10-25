@@ -72,9 +72,9 @@ OPENAI_API_KEY=$OPENAI_API_KEY docker-compose up --build
 ```
 
 ### 3. Access Application
-- **Frontend**: http://nc5.netbird.local:6001
-- **Backend API**: http://nc5.netbird.local:6002
-- **API Documentation**: http://nc5.netbird.local:6002/api/docs
+- **Frontend**: http://nc5.netbird.selfhosted:6001
+- **Backend API**: http://nc5.netbird.selfhosted:6002
+- **API Documentation**: http://nc5.netbird.selfhosted:6002/api/docs
 
 ## Test Accounts
 

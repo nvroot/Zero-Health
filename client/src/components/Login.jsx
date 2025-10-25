@@ -11,7 +11,7 @@ const Login = () => {
     
     try {
       // Deliberately vulnerable: No input sanitization
-      const response = await fetch('http://nc5.netbird.local:6002/api/login', {
+      const response = await fetch('http://nc5.netbird.selfhosted:6002/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

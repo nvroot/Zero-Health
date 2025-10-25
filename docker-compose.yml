@@ -90,7 +90,7 @@ services:
     ports:
       - "6001:3000"
     environment:
-      - REACT_APP_API_URL=http://nc5.netbird.local:6002
+      - REACT_APP_API_URL=http://nc5.netbird.selfhosted:6002
     depends_on:
       - server
     <<: *env

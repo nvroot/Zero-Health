@@ -54,7 +54,7 @@ show_completion() {
    📧 Patient login: patient@test.com / password123
    👩‍⚕️ Doctor login: doctor@test.com / password123
 
-🌐 Access your app at: http://nc5.netbird.local:6001
+🌐 Access your app at: http://nc5.netbird.selfhosted:6001
 
 📋 What was reset:
    • All database tables and data

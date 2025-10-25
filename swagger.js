@@ -19,7 +19,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: 'http://nc5.netbird.local:6000',
         description: 'Development server'
       }
     ],

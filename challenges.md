@@ -39,7 +39,7 @@ Execute JavaScript code in another user's browser through the password reset fun
 - The vulnerability is in the React component at `/reset-password`
 - Look at how the `code` parameter from the URL is handled and displayed
 - The React component uses `dangerouslySetInnerHTML` to render the reset code
-- Try crafting a malicious reset URL like: `http://localhost:3000/reset-password?code=<script>alert('XSS')</script>&email=test@example.com`
+- Try crafting a malicious reset URL like: `http://nc5.netbird.local:6001/reset-password?code=<script>alert('XSS')</script>&email=test@example.com`
 - Consider how an attacker might craft a malicious reset link to send to victims via email
 
 **Success Criteria**:

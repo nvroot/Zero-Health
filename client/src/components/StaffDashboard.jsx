@@ -115,7 +115,7 @@ const StaffDashboard = () => {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/patients', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/patients', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -129,7 +129,7 @@ const StaffDashboard = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/appointments', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/appointments', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -143,7 +143,7 @@ const StaffDashboard = () => {
 
   const fetchLabResults = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/lab-results', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/lab-results', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -157,7 +157,7 @@ const StaffDashboard = () => {
 
   const fetchPrescriptions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/prescriptions', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/prescriptions', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -171,7 +171,7 @@ const StaffDashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/messages', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/messages', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -185,7 +185,7 @@ const StaffDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/admin/users', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -199,7 +199,7 @@ const StaffDashboard = () => {
 
   const fetchStatistics = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/statistics', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/admin/statistics', {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -223,7 +223,7 @@ const StaffDashboard = () => {
         formData.append('image', labResultImage);
       }
       
-      const response = await fetch('http://localhost:5000/api/lab-results', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/lab-results', {
         method: 'POST',
         headers: {
           'Authorization': getAuthToken() ? `Bearer ${getAuthToken()}` : ''
@@ -248,7 +248,7 @@ const StaffDashboard = () => {
   const handleCreatePrescription = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/prescriptions', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/prescriptions', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(newPrescription)
@@ -270,7 +270,7 @@ const StaffDashboard = () => {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/admin/users', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(newUser)
@@ -295,7 +295,7 @@ const StaffDashboard = () => {
 
   const handleCollectPrescription = async (prescriptionId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/prescriptions/${prescriptionId}/collect`, {
+      const response = await fetch(`http://nc5.netbird.local:6000/api/prescriptions/${prescriptionId}/collect`, {
         method: 'PUT',
         headers: getAuthHeaders()
       });
@@ -315,7 +315,7 @@ const StaffDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const response = await fetch(`http://nc5.netbird.local:6000/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -334,7 +334,7 @@ const StaffDashboard = () => {
 
   const handleUpdateUserRole = async (userId, newRole) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+      const response = await fetch(`http://nc5.netbird.local:6000/api/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ role: newRole })
@@ -362,7 +362,7 @@ const StaffDashboard = () => {
         formData.append('attachment', replyAttachment);
       }
       
-      const response = await fetch('http://localhost:5000/api/messages', {
+      const response = await fetch('http://nc5.netbird.local:6000/api/messages', {
         method: 'POST',
         headers: {
           'Authorization': getAuthToken() ? `Bearer ${getAuthToken()}` : ''
@@ -692,14 +692,14 @@ const StaffDashboard = () => {
                     {result.file_path && (
                       <div style={{marginTop: '10px'}}>
                         <img 
-                          src={`http://localhost:5000/uploads/${result.file_path}`} 
+                          src={`http://nc5.netbird.local:6000/uploads/${result.file_path}`} 
                           alt="Lab result" 
                           style={{maxHeight: '150px', maxWidth: '200px', border: '1px solid #ddd', borderRadius: '8px'}}
-                          onClick={() => window.open(`http://localhost:5000/uploads/${result.file_path}`, '_blank')}
+                          onClick={() => window.open(`http://nc5.netbird.local:6000/uploads/${result.file_path}`, '_blank')}
                         />
                         <br />
                         <button
-                          onClick={() => window.open(`http://localhost:5000/uploads/${result.file_path}`, '_blank')}
+                          onClick={() => window.open(`http://nc5.netbird.local:6000/uploads/${result.file_path}`, '_blank')}
                           className="btn btn-secondary"
                           style={{marginTop: '5px'}}
                         >
@@ -796,10 +796,10 @@ const StaffDashboard = () => {
                         {message.attachment_path && message.attachment_path !== 'null' && message.attachment_path.trim() !== '' && (
                           <div style={{marginTop: '10px'}}>
                             <img 
-                              src={`http://localhost:5000/uploads/${message.attachment_path}`} 
+                              src={`http://nc5.netbird.local:6000/uploads/${message.attachment_path}`} 
                               alt="Message attachment" 
                               style={{maxHeight: '200px', maxWidth: '300px', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer'}}
-                              onClick={() => window.open(`http://localhost:5000/uploads/${message.attachment_path}`, '_blank')}
+                              onClick={() => window.open(`http://nc5.netbird.local:6000/uploads/${message.attachment_path}`, '_blank')}
                             />
                           </div>
                         )}
